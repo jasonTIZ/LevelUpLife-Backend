@@ -120,3 +120,4 @@
 /home/adamag/Documentos/Programación_de_plataformas_móviles/LevelUpLife-Backend/obj/Debug/net9.0/LevelUpLife-Backend.pdb
 /home/adamag/Documentos/Programación_de_plataformas_móviles/LevelUpLife-Backend/obj/Debug/net9.0/LevelUpLife-Backend.genruntimeconfig.cache
 /home/adamag/Documentos/Programación_de_plataformas_móviles/LevelUpLife-Backend/obj/Debug/net9.0/ref/LevelUpLife-Backend.dll
+/home/adamag/Documentos/Programación_de_plataformas_móviles/LevelUpLife-Backend/bin/Debug/net9.0/Scalar.AspNetCore.dll

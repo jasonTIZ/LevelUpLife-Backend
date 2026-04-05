@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "MwafcDmZseA=",
+  "dgSpecHash": "kH2qsWil15s=",
   "success": true,
   "projectFilePath": "/home/adamag/Documentos/Programación_de_plataformas_móviles/LevelUpLife-Backend/LevelUpLife-Backend.csproj",
   "expectedPackageFiles": [
@@ -34,6 +34,7 @@
     "/home/adamag/.nuget/packages/mono.texttemplating/3.0.0/mono.texttemplating.3.0.0.nupkg.sha512",
     "/home/adamag/.nuget/packages/npgsql/9.0.0/npgsql.9.0.0.nupkg.sha512",
     "/home/adamag/.nuget/packages/npgsql.entityframeworkcore.postgresql/9.0.0/npgsql.entityframeworkcore.postgresql.9.0.0.nupkg.sha512",
+    "/home/adamag/.nuget/packages/scalar.aspnetcore/2.13.20/scalar.aspnetcore.2.13.20.nupkg.sha512",
     "/home/adamag/.nuget/packages/system.codedom/6.0.0/system.codedom.6.0.0.nupkg.sha512",
     "/home/adamag/.nuget/packages/system.collections.immutable/7.0.0/system.collections.immutable.7.0.0.nupkg.sha512",
     "/home/adamag/.nuget/packages/system.composition/7.0.0/system.composition.7.0.0.nupkg.sha512",

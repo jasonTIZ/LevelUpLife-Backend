@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("LevelUpLife-Backend")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+bafdca8b24c4ec605709f991642e171291bdfad3")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f3f6f0f509b1843392267e3e6a66c941e6c96978")]
 [assembly: System.Reflection.AssemblyProductAttribute("LevelUpLife-Backend")]
 [assembly: System.Reflection.AssemblyTitleAttribute("LevelUpLife-Backend")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

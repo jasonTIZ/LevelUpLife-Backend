@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 namespace LevelUpLifeBackend.DTOs.Requests;
 
-public class HabitRequestDto{
+public class CreateHabitRequestDto{
   [Required(ErrorMessage = "El título del hábito es obligatorio.")]
   [StringLength(100, MinimumLength = 5, ErrorMessage = "El título debe de tener entre 5 y 100 caractares.")]
   public string Title { get; set; } = string.Empty;

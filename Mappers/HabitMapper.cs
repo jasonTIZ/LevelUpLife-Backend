@@ -6,7 +6,7 @@ namespace LevelUpLifeBackend.Mappers;
 
 public static class HabitMapper
 {
-    public static Habit ToEntity(HabitRequestDto dto)
+    public static Habit ToEntity(CreateHabitRequestDto dto)
     {
         return new Habit
         {
