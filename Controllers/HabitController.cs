@@ -80,7 +80,8 @@ public class HabitsController : ControllerBase
             );
         }
     }
-
+  
+    // [Authorize] //
     [HttpGet("active")]
     public async Task<IActionResult> GetActiveHabits(
         [FromQuery] int pageNumber = 1,
