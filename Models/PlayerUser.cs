@@ -9,7 +9,7 @@ public class PlayerUser{
   public int Level { get; set; }
   public int ExperiencePoints { get; set; }
   public int DaysStreak { get; set; }
-  public DateTime LastLogin { get; set; }
+  public DateTime? LastLogin { get; set; }
   public DateTime CreationDate { get; set; }
   public bool IsActive { get; set; }
 
