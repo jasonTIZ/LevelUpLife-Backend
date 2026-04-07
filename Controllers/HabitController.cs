@@ -108,6 +108,17 @@ public class HabitsController : ControllerBase
                 userId
             );
 
+            if (pagedResult.Items == null || !pagedResult.Items.Any())
+            {
+                return BadRequest(
+                    new
+                    {
+                        success = false,
+                        message = "No se encontraron hábitos para el usuario.",
+                    }
+                );
+            }
+
             return Ok(
                 new
                 {
