@@ -26,4 +26,38 @@ public class HabitService : IHabitService
         var habit = await _habitRepository.GetByIdAsync(id);
         return habit is null ? null : HabitMapper.ToResponse(habit);
     }
+
+    public async Task<PagedResultDto<HabitResponseDto>> GetActiveHabitsPaginatedAsync(
+        int pageNumber,
+        int pageSize,
+        int userId
+    )
+    {
+        var (habits, totalCount) = await _habitRepository.GetActiveHabitsPaginatedAsync(
+            pageNumber,
+            pageSize,
+            userId
+        );
+        var dtoList = habits.Select(h => new HabitResponseDto
+        {
+            Id = h.Id,
+            Title = h.Title,
+            Description = h.Description,
+            IsActive = h.IsActive,
+            UserName = h.User.UserName,
+            DisciplineName = h.Discipline.Name,
+            CategoryName = h.Discipline.Category.Name,
+        });
+
+        int totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+
+        return new PagedResultDto<HabitResponseDto>
+        {
+            Items = dtoList,
+            TotalRecords = totalCount,
+            TotalPages = totalPages,
+            CurrentPage = pageNumber,
+            PageSize = pageSize,
+        };
+    }
 }

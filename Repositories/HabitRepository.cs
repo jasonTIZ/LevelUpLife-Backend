@@ -1,6 +1,6 @@
-using Microsoft.EntityFrameworkCore;
 using LevelUpLifeBackend.Data;
 using LevelUpLifeBackend.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace LevelUpLifeBackend.Repositories;
 
@@ -22,7 +22,29 @@ public class HabitRepository : IHabitRepository
         return habit;
     }
 
-    public async Task<Habit?> GetByIdAsync(int id){
-       return await _context.Habits.AsNoTracking().FirstOrDefaultAsync(habit => habit.Id == id);
+    public async Task<Habit?> GetByIdAsync(int id)
+    {
+        return await _context.Habits.AsNoTracking().FirstOrDefaultAsync(habit => habit.Id == id);
+    }
+
+    public async Task<(IEnumerable<Habit> Habits, int TotalCount)> GetActiveHabitsPaginatedAsync(
+        int pageNumber,
+        int pageSize,
+        int userId
+    )
+    {
+        var baseQuery = _context.Habits.AsNoTracking().Where(h => h.IsActive && h.User.Id == userId);
+
+        var totalCount = await baseQuery.CountAsync();
+
+        var habits = await baseQuery
+            .Include(h => h.Discipline)
+                .ThenInclude(d => d.Category)
+            .Include(h => h.User)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return (habits, totalCount);
     }
 }

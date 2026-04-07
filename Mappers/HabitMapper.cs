@@ -24,8 +24,9 @@ public static class HabitMapper
             Id = habit.Id,
             Title = habit.Title,
             Description = habit.Description,
-            DisciplineId = habit.Discipline.Id,
-            UserId = habit.User.Id,
+            DisciplineName = habit.Discipline.Name,
+            UserName = habit.User.UserName,
+            CategoryName = habit.Discipline.Category.Name,
             IsActive = habit.IsActive,
         };
     }
