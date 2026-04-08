@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "/home/adamag/Documentos/Programación_de_plataformas_móviles/LevelUpLife-Backend/LevelUpLife-Backend.csproj": {}
+    "/home/darwin/Documentos/DPPM/LevelUpLife-Backend/LevelUpLife-Backend.csproj": {}
   },
   "projects": {
-    "/home/adamag/Documentos/Programación_de_plataformas_móviles/LevelUpLife-Backend/LevelUpLife-Backend.csproj": {
+    "/home/darwin/Documentos/DPPM/LevelUpLife-Backend/LevelUpLife-Backend.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/home/adamag/Documentos/Programación_de_plataformas_móviles/LevelUpLife-Backend/LevelUpLife-Backend.csproj",
+        "projectUniqueName": "/home/darwin/Documentos/DPPM/LevelUpLife-Backend/LevelUpLife-Backend.csproj",
         "projectName": "LevelUpLife-Backend",
-        "projectPath": "/home/adamag/Documentos/Programación_de_plataformas_móviles/LevelUpLife-Backend/LevelUpLife-Backend.csproj",
-        "packagesPath": "/home/adamag/.nuget/packages/",
-        "outputPath": "/home/adamag/Documentos/Programación_de_plataformas_móviles/LevelUpLife-Backend/obj/",
+        "projectPath": "/home/darwin/Documentos/DPPM/LevelUpLife-Backend/LevelUpLife-Backend.csproj",
+        "packagesPath": "/home/darwin/.nuget/packages/",
+        "outputPath": "/home/darwin/Documentos/DPPM/LevelUpLife-Backend/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "/home/adamag/.nuget/NuGet/NuGet.Config"
+          "/home/darwin/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net9.0"
@@ -45,6 +45,14 @@
         "net9.0": {
           "targetAlias": "net9.0",
           "dependencies": {
+            "BCrypt.Net-Next": {
+              "target": "Package",
+              "version": "[4.0.3, )"
+            },
+            "Microsoft.AspNetCore.Authentication.JwtBearer": {
+              "target": "Package",
+              "version": "[9.0.0, )"
+            },
             "Microsoft.AspNetCore.OpenApi": {
               "target": "Package",
               "version": "[9.0.14, )"
