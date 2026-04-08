@@ -15,8 +15,7 @@ public class AuthRepository : IAuthRepository
 
     public async Task<PlayerUser?> GetByUserNameOrEmailAsync(string userNameOrEmail)
     {
-        // Include() = JOIN: trae Person y Class junto al PlayerUser.
-        // La comparación es case-insensitive gracias a ToLower().
+        // Get PlayerUser for UserName or for Email (Person).
         return await _context.PlayerUsers
             .Include(u => u.Person)
             .Include(u => u.Class)
