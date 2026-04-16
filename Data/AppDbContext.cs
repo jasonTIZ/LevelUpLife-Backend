@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using LevelUpLifeBackend.Models;
+using Npgsql.NameTranslation;
 
 namespace LevelUpLifeBackend.Data;
 
@@ -17,10 +18,15 @@ public class AppDbContext : DbContext
     public DbSet<HabitCategory> Categories { get; set; }
     public DbSet<HabitDiscipline> Disciplines { get; set; }
     public DbSet<Habit> Habits { get; set; }
+    public DbSet<HabitTask> HabitTasks { get; set; }
+    public DbSet<RepetitionCriteria> RepetitionCriteriaRecords { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        // Registrar el Enum de PostgreSQL para que Npgsql lo reconozca
+        modelBuilder.HasPostgresEnum<MeasurementUnit>("ENUM_MEASUREMENT_UNIT", nameTranslator: new NpgsqlNullNameTranslator());
 
         // ==========================================================
         // 1. NÚCLEO DE IDENTIDAD Y USUARIO
@@ -135,6 +141,34 @@ public class AppDbContext : DbContext
             entity.Property(e => e.Title).HasColumnName("DSC_HABIT_TITLE").HasMaxLength(100).IsRequired();
             entity.Property(e => e.Description).HasColumnName("DSC_HABIT_DESCRIPTION");
             entity.Property(e => e.IsActive).HasColumnName("STATUS_HABIT_IS_ACTIVE");
+        });
+
+        modelBuilder.Entity<HabitTask>(entity =>
+        {
+            entity.ToTable("LULM_HABIT_TASK");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("ID_HABIT_TASK");
+        });
+
+        modelBuilder.Entity<RepetitionCriteria>(entity =>
+        {
+            entity.ToTable("LULT_HABIT_TASK_REPETITIONS_CRITERIA");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("ID_HABIT_TASK_REPETITIONS_CRITERIA");
+
+            entity.Property(e => e.HabitTaskId).HasColumnName("ID_HABIT_TASK");
+            entity.HasOne(e => e.HabitTask)
+                  .WithMany()
+                  .HasForeignKey(e => e.HabitTaskId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(e => e.HabitTaskId).IsUnique();
+
+            entity.Property(e => e.NumRepetitionsObjective).HasColumnName("NUM_REPETITIONS_OBJECTIVE");
+            entity.Property(e => e.TypeUnityMeasurementUnit)
+                  .HasColumnName("TYPE_UNITY_MEASUREMENT_UNIT");
+            entity.Property(e => e.StatusIsPartialAllowed).HasColumnName("STATUS_IS_PARTIAL_ALLOWED");
+            entity.Property(e => e.StatusRepetitionsCriteriaIsActive)
+                  .HasColumnName("STATUS_REPETITIONS_CRITERIA_IS_ACTIVE");
         });
     }
 }
