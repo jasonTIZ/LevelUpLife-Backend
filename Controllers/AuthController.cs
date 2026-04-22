@@ -28,4 +28,16 @@ public class AuthController : ControllerBase
 
         return Ok(new { success = true, data = result });
     }
+
+    // POST api/auth/register
+    [HttpPost("register")]
+    public async Task<IActionResult> Register([FromBody] RegisterRequestDto request)
+    {
+        var (success, message) = await _authService.RegisterAsync(request);
+
+        if (!success)
+            return Conflict(new { success = false, message });
+
+        return Ok(new { success = true, message });
+    }
 }
