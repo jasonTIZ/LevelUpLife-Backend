@@ -26,6 +26,10 @@ builder.Services.AddScoped<IHabitService, HabitService>();
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 
+// Repositorios y Servicios de Jugador
+builder.Services.AddScoped<IPlayerRepository, PlayerRepository>();
+builder.Services.AddScoped<IPlayerService, PlayerService>();
+
 // Configuración de JWT
 // Esto le dice al framework cómo validar los tokens que llegan en los requests.
 var jwtKey = builder.Configuration["Jwt:Key"]!;
