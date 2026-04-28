@@ -1,26 +1,25 @@
 {
   "format": 1,
   "restore": {
-    "/home/darwin/Documentos/DPPM/LevelUpLife-Backend/LevelUpLife-Backend.csproj": {}
+    "/home/AdamAG/Documents/Moviles/LevelUpLife-Backend/LevelUpLife-Backend.csproj": {}
   },
   "projects": {
-    "/home/darwin/Documentos/DPPM/LevelUpLife-Backend/LevelUpLife-Backend.csproj": {
+    "/home/AdamAG/Documents/Moviles/LevelUpLife-Backend/LevelUpLife-Backend.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/home/darwin/Documentos/DPPM/LevelUpLife-Backend/LevelUpLife-Backend.csproj",
+        "projectUniqueName": "/home/AdamAG/Documents/Moviles/LevelUpLife-Backend/LevelUpLife-Backend.csproj",
         "projectName": "LevelUpLife-Backend",
-        "projectPath": "/home/darwin/Documentos/DPPM/LevelUpLife-Backend/LevelUpLife-Backend.csproj",
-        "packagesPath": "/home/darwin/.nuget/packages/",
-        "outputPath": "/home/darwin/Documentos/DPPM/LevelUpLife-Backend/obj/",
+        "projectPath": "/home/AdamAG/Documents/Moviles/LevelUpLife-Backend/LevelUpLife-Backend.csproj",
+        "packagesPath": "/home/AdamAG/.nuget/packages/",
+        "outputPath": "/home/AdamAG/Documents/Moviles/LevelUpLife-Backend/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "/home/darwin/.nuget/NuGet/NuGet.Config"
+          "/home/AdamAG/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net9.0"
         ],
         "sources": {
-          "/usr/lib/dotnet/library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -87,6 +86,12 @@
           ],
           "assetTargetFallback": true,
           "warn": true,
+          "downloadDependencies": [
+            {
+              "name": "Microsoft.AspNetCore.App.Ref",
+              "version": "[9.0.14, 9.0.14]"
+            }
+          ],
           "frameworkReferences": {
             "Microsoft.AspNetCore.App": {
               "privateAssets": "none"
@@ -95,7 +100,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "/usr/lib/dotnet/sdk/9.0.115/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/9.0.115/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

@@ -14,7 +14,7 @@ public class AppDbContext : DbContext
     public DbSet<UserPlayerClass> UserPlayerClasses { get; set; }
     public DbSet<PlayerUser> PlayerUsers { get; set; }
     
-    public DbSet<HabitCategory> Categories { get; set; }
+    public DbSet<HabitCategory> HabitCategories { get; set; }
     public DbSet<HabitDiscipline> Disciplines { get; set; }
     public DbSet<Habit> Habits { get; set; }
 
