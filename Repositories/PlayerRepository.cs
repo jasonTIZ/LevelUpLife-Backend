@@ -21,6 +21,14 @@ public class PlayerRepository : IPlayerRepository
             .FirstOrDefaultAsync(u => u.Id == playerUserId && u.IsActive);
     }
 
+    public async Task<PlayerUser?> GetByIdWithRelationsAsync(int playerUserId)
+    {
+        return await _context.PlayerUsers
+            .Include(u => u.Person)
+            .Include(u => u.Class)
+            .FirstOrDefaultAsync(u => u.Id == playerUserId);
+    }
+
     public async Task<bool> UserNameExistsForAnotherUserAsync(string userName, int excludedPlayerUserId)
     {
         return await _context.PlayerUsers.AnyAsync(u =>
