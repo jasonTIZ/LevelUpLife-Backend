@@ -36,8 +36,8 @@ public class AuthController : ControllerBase
         var (success, message) = await _authService.RegisterAsync(request);
 
         if (!success)
-            return Conflict(new { success = false, message });
+            return Conflict(new { code = "DUPLICATE_ACCOUNT", message });
 
-        return Ok(new { success = true, message });
+        return StatusCode(201, new { success = true, message });
     }
 }
