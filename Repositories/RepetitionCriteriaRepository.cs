@@ -13,16 +13,6 @@ public class RepetitionCriteriaRepository : IRepetitionCriteriaRepository
         _context = context;
     }
 
-    public async Task<bool> HabitTaskExistsAsync(int taskId)
-    {
-        return await _context.HabitTasks.AsNoTracking().AnyAsync(task => task.Id == taskId);
-    }
-
-    public async Task<bool> CriteriaExistsAsync(int taskId)
-    {
-        return await _context.RepetitionCriteriaRecords.AsNoTracking().AnyAsync(criteria => criteria.HabitTaskId == taskId);
-    }
-
     public async Task<RepetitionCriteria> AddAsync(RepetitionCriteria criteria)
     {
         await _context.RepetitionCriteriaRecords.AddAsync(criteria);

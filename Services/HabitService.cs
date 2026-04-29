@@ -1,6 +1,8 @@
+using LevelUpLifeBackend.Data;
 using LevelUpLifeBackend.DTOs.Requests;
 using LevelUpLifeBackend.DTOs.Responses;
 using LevelUpLifeBackend.Mappers;
+using LevelUpLifeBackend.Models;
 using LevelUpLifeBackend.Repositories;
 
 namespace LevelUpLifeBackend.Services;
@@ -8,17 +10,54 @@ namespace LevelUpLifeBackend.Services;
 public class HabitService : IHabitService
 {
     private readonly IHabitRepository _habitRepository;
+    private readonly IHabitTaskRepository _habitTaskRepository;
+    private readonly IRepetitionCriteriaRepository _repetitionCriteriaRepository;
+    private readonly AppDbContext _context;
 
-    public HabitService(IHabitRepository habitRepository)
+    public HabitService(
+        IHabitRepository habitRepository,
+        IHabitTaskRepository habitTaskRepository,
+        IRepetitionCriteriaRepository repetitionCriteriaRepository,
+        AppDbContext context)
     {
         _habitRepository = habitRepository;
+        _habitTaskRepository = habitTaskRepository;
+        _repetitionCriteriaRepository = repetitionCriteriaRepository;
+        _context = context;
     }
 
     public async Task<HabitResponseDto> CreateAsync(CreateHabitRequestDto request)
     {
-        return HabitMapper.ToResponse(
-            await _habitRepository.AddAsync(HabitMapper.ToEntity(request))
-        );
+        await using var transaction = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            var habit = await _habitRepository.AddAsync(HabitMapper.ToEntity(request));
+
+            var taskResponses = new List<HabitTaskResponseDto>();
+            foreach (var taskDto in request.Tasks)
+            {
+                var task = await _habitTaskRepository.AddAsync(new HabitTask { HabitId = habit.Id });
+                var criteria = await _repetitionCriteriaRepository.AddAsync(
+                    RepetitionCriteriaMapper.ToEntity(task.Id, taskDto.RepetitionCriteria!)
+                );
+                taskResponses.Add(new HabitTaskResponseDto
+                {
+                    Id = task.Id,
+                    RepetitionCriteria = RepetitionCriteriaMapper.ToResponse(criteria),
+                });
+            }
+
+            await transaction.CommitAsync();
+
+            var response = HabitMapper.ToResponse(habit);
+            response.Tasks = taskResponses;
+            return response;
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
     }
 
     public async Task<HabitResponseDto?> GetByIdAsync(int id)

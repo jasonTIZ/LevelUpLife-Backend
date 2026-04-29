@@ -48,8 +48,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<IHabitRepository, HabitRepository>();
 builder.Services.AddScoped<IHabitService, HabitService>();
 
+builder.Services.AddScoped<IHabitTaskRepository, HabitTaskRepository>();
 builder.Services.AddScoped<IRepetitionCriteriaRepository, RepetitionCriteriaRepository>();
-builder.Services.AddScoped<IRepetitionCriteriaService, RepetitionCriteriaService>();
 
 // Repositorios y Servicios de Autenticación
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
