@@ -148,12 +148,6 @@ public class AppDbContext : DbContext
             entity.ToTable("LULM_HABIT_TASK");
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).HasColumnName("ID_HABIT_TASK");
-
-            entity.Property(e => e.HabitId).HasColumnName("ID_HABIT");
-            entity.HasOne(e => e.Habit)
-                  .WithMany()
-                  .HasForeignKey(e => e.HabitId)
-                  .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<RepetitionCriteria>(entity =>

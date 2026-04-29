@@ -3237,19 +3237,19 @@
     ]
   },
   "packageFolders": {
-    "/home/jasonm/.nuget/packages/": {}
+    "/home/darwin/.nuget/packages/": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/home/jasonm/ambiente-oc/proyectos-php/LevelUpFit-Backend/LevelUpLife-Backend.csproj",
+      "projectUniqueName": "/home/darwin/Documentos/DPPM/LevelUpLife-Backend/LevelUpLife-Backend.csproj",
       "projectName": "LevelUpLife-Backend",
-      "projectPath": "/home/jasonm/ambiente-oc/proyectos-php/LevelUpFit-Backend/LevelUpLife-Backend.csproj",
-      "packagesPath": "/home/jasonm/.nuget/packages/",
-      "outputPath": "/home/jasonm/ambiente-oc/proyectos-php/LevelUpFit-Backend/obj/",
+      "projectPath": "/home/darwin/Documentos/DPPM/LevelUpLife-Backend/LevelUpLife-Backend.csproj",
+      "packagesPath": "/home/darwin/.nuget/packages/",
+      "outputPath": "/home/darwin/Documentos/DPPM/LevelUpLife-Backend/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "/home/jasonm/.nuget/NuGet/NuGet.Config"
+        "/home/darwin/.nuget/NuGet/NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net9.0"
@@ -3330,7 +3330,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "/usr/lib/dotnet/sdk/9.0.116/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "/usr/lib/dotnet/sdk/9.0.115/PortableRuntimeIdentifierGraph.json"
       }
     }
   }

@@ -17,7 +17,4 @@ public class CreateHabitRequestDto{
   [Range(1, int.MaxValue, ErrorMessage = "Usuario inválido.")]
   public int UserId { get; set; }
 
-  [Required(ErrorMessage = "Debes agregar al menos una tarea al hábito.")]
-  [MinLength(1, ErrorMessage = "Debes agregar al menos una tarea al hábito.")]
-  public List<CreateHabitTaskRequestDto> Tasks { get; set; } = [];
 }
