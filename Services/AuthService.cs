@@ -51,7 +51,12 @@ public class AuthService : IAuthService
         var jwtKey = _configuration["Jwt:Key"]!;
         var issuer = _configuration["Jwt:Issuer"]!;
         var audience = _configuration["Jwt:Audience"]!;
-        var expiresInMinutes = int.Parse(_configuration["Jwt:ExpiresInMinutes"]!);
+        var expiresInSetting = _configuration["Jwt:ExpiresInMinutes"];
+        var expiresInMinutes = 60;
+        if (int.TryParse(expiresInSetting, out var parsedMinutes) && parsedMinutes > 0)
+        {
+            expiresInMinutes = parsedMinutes;
+        }
 
         // La clave secreta se convierte a bytes para firmar el token.
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
