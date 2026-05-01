@@ -24,7 +24,12 @@ public class HabitRepository : IHabitRepository
 
     public async Task<Habit?> GetByIdAsync(int id)
     {
-        return await _context.Habits.AsNoTracking().FirstOrDefaultAsync(habit => habit.Id == id);
+        return await _context.Habits
+            .AsNoTracking()
+            .Include(h => h.Discipline)
+                .ThenInclude(d => d.Category)
+            .Include(h => h.User)
+            .FirstOrDefaultAsync(habit => habit.Id == id);
     }
 
     public async Task<(IEnumerable<Habit> Habits, int TotalCount)> GetActiveHabitsPaginatedAsync(
@@ -46,5 +51,14 @@ public class HabitRepository : IHabitRepository
             .ToListAsync();
 
         return (habits, totalCount);
+    }
+
+    public async Task UpdateHabitAsync(Habit habit)
+    {
+        _context.Entry(habit.Discipline).State = EntityState.Unchanged;
+        _context.Entry(habit.Discipline.Category).State = EntityState.Unchanged;
+        _context.Entry(habit.User).State = EntityState.Unchanged;
+        _context.Habits.Update(habit);
+        await _context.SaveChangesAsync();
     }
 }

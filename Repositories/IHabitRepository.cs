@@ -11,4 +11,5 @@ public interface IHabitRepository
         int pageSize,
         int userId
     );
+    Task UpdateHabitAsync(Habit habit);
 }
