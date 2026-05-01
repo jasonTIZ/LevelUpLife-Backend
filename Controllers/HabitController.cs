@@ -158,19 +158,43 @@ public class HabitsController : ControllerBase
 
         try
         {
+            //var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userIdString = Request.Headers["X-User-Id"].FirstOrDefault();
+
+            if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out int userId))
+            {
+                return Unauthorized(new { success = false, message = "Acceso no autorizado." });
+            }
+
             var updatedHabit = await _habitService.UpdateHabitAsync(dto);
 
             if (updatedHabit == null)
             {
-                return NotFound(new { success = false, message = $"El hábito que desea editar no existe."});
+                return NotFound(
+                    new { success = false, message = $"El hábito que desea editar no existe." }
+                );
             }
 
-            return Ok(new { success = true, message = "Hábito actualizado exitosamente!", data = updatedHabit });
+            return Ok(
+                new
+                {
+                    success = true,
+                    message = "Hábito actualizado exitosamente!",
+                    data = updatedHabit,
+                }
+            );
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error al actualizar: {ex.Message}");
-            return StatusCode(500, new { success = false, message = "Ocurrió un error inesperado al intentar actualizar el hábito." });
+            return StatusCode(
+                500,
+                new
+                {
+                    success = false,
+                    message = "Ocurrió un error inesperado al intentar actualizar el hábito.",
+                }
+            );
         }
     }
 }
