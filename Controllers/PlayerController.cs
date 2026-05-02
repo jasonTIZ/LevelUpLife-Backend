@@ -22,11 +22,8 @@ public class PlayerController : ControllerBase
     [HttpPut("update")]
     public async Task<IActionResult> UpdateProfile([FromBody] UpdatePlayerProfileRequestDto request)
     {
-        var userIdValue =
-            User.FindFirstValue(ClaimTypes.NameIdentifier)
-            ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
-
-        if (string.IsNullOrWhiteSpace(userIdValue) || !int.TryParse(userIdValue, out int playerUserId))
+        var userIdResult = ResolveAuthenticatedUserId();
+        if (userIdResult is null)
         {
             return Unauthorized(new
             {
@@ -35,6 +32,7 @@ public class PlayerController : ControllerBase
                 details = "Token inválido o sin identificador de usuario."
             });
         }
+        var playerUserId = userIdResult.Value;
 
         if (!Request.Headers.TryGetValue("If-Match", out var ifMatchHeader) || string.IsNullOrWhiteSpace(ifMatchHeader))
         {
@@ -92,5 +90,62 @@ public class PlayerController : ControllerBase
         }
 
         return Ok(result.Response);
+    }
+
+    [HttpPatch("delete")]
+    public async Task<IActionResult> DeleteAccount([FromBody] DeletePlayerAccountRequestDto? request)
+    {
+        var userIdResult = ResolveAuthenticatedUserId();
+        if (userIdResult is null)
+        {
+            return Unauthorized(new
+            {
+                code = 401,
+                message = "Unauthorized",
+                details = "Token inválido o sin identificador de usuario."
+            });
+        }
+
+        var reasonFromHeader = Request.Headers["X-Delete-Reason"].FirstOrDefault();
+        var reason = !string.IsNullOrWhiteSpace(request?.Reason) ? request!.Reason : reasonFromHeader;
+
+        var result = await _playerService.DeleteAccountAsync(userIdResult.Value, reason);
+
+        return result.Status switch
+        {
+            DeletePlayerAccountStatus.Success => Ok(result.Response),
+            DeletePlayerAccountStatus.NotFound => NotFound(new
+            {
+                code = 404,
+                message = "Not Found",
+                details = "No se encontró el jugador solicitado."
+            }),
+            DeletePlayerAccountStatus.Forbidden => StatusCode(StatusCodes.Status403Forbidden, new
+            {
+                code = 403,
+                message = "Forbidden",
+                details = "No tiene permisos para desactivar esta cuenta"
+            }),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new
+            {
+                code = 500,
+                message = "Internal Server Error",
+                details = "Unexpected error occurred"
+            })
+        };
+    }
+
+    private int? ResolveAuthenticatedUserId()
+    {
+        var userIdValue =
+            User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+
+        if (string.IsNullOrWhiteSpace(userIdValue) || !int.TryParse(userIdValue, out int playerUserId))
+        {
+            return null;
+        }
+
+        return playerUserId;
     }
 }

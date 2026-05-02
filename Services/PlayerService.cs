@@ -106,6 +106,46 @@ public class PlayerService : IPlayerService
         };
     }
 
+    public async Task<DeletePlayerAccountServiceResult> DeleteAccountAsync(int playerUserId, string? reason)
+    {
+        var player = await _playerRepository.GetByIdWithRelationsAsync(playerUserId);
+        if (player is null)
+        {
+            return new DeletePlayerAccountServiceResult
+            {
+                Status = DeletePlayerAccountStatus.NotFound
+            };
+        }
+
+        // Si la cuenta ya está inactiva, rechazamos la operación.
+        if (!player.IsActive)
+        {
+            return new DeletePlayerAccountServiceResult
+            {
+                Status = DeletePlayerAccountStatus.Forbidden
+            };
+        }
+
+        player.IsActive = false;
+        if (player.Person is not null)
+        {
+            player.Person.IsActive = false;
+        }
+
+        await _playerRepository.SaveChangesAsync();
+
+        return new DeletePlayerAccountServiceResult
+        {
+            Status = DeletePlayerAccountStatus.Success,
+            Response = new DeletePlayerAccountResponseDto
+            {
+                Success = true,
+                Message = "Cuenta desactivada correctamente",
+                DeactivatedAt = DateTime.UtcNow
+            }
+        };
+    }
+
     private static PlayerProfileDto MapToProfileDto(PlayerUser player)
     {
         return new PlayerProfileDto
