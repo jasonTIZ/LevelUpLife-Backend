@@ -34,8 +34,8 @@ public sealed class AuthSessionHandler : DelegatingHandler
 
             if (!string.IsNullOrWhiteSpace(credentials.SessionId))
             {
-                request.Headers.Remove(_options.SessionCookieName);
-                request.Headers.Add(_options.SessionCookieName, credentials.SessionId);
+                // Attach SESSION_ID as a Cookie header
+                request.Headers.Add("Cookie", $"{_options.SessionCookieName}={credentials.SessionId}");
             }
         }
 
