@@ -1,5 +1,6 @@
 using System.Text;
 using LevelUpLifeBackend.Data;
+using LevelUpLifeBackend.Infrastructure.Errors;
 using LevelUpLifeBackend.Infrastructure.Http;
 using LevelUpLifeBackend.Infrastructure.Http.Context;
 using LevelUpLifeBackend.Infrastructure.Http.Events;
@@ -44,6 +45,7 @@ builder.Services.AddScoped<IPlayerService, PlayerService>();
 builder.Services.Configure<BaseHttpClientOptions>(
     builder.Configuration.GetSection(BaseHttpClientOptions.SectionName)
 );
+builder.Services.AddSingleton<IApiErrorParser, ApiErrorParser>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton<IGlobalErrorPublisher, GlobalErrorPublisher>();
 builder.Services.AddScoped<IRequestCredentialAccessor, HttpContextCredentialAccessor>();
