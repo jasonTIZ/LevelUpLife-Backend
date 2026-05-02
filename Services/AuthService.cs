@@ -1,4 +1,3 @@
-using LevelUpLifeBackend.Services;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -8,8 +7,7 @@ using LevelUpLifeBackend.Models;
 using LevelUpLifeBackend.Repositories;
 using Microsoft.IdentityModel.Tokens;
 
-
-
+namespace LevelUpLifeBackend.Services;
 
 public class AuthService : IAuthService
 {
@@ -77,7 +75,13 @@ public class AuthService : IAuthService
         var jwtKey = _configuration["Jwt:Key"]!;
         var issuer = _configuration["Jwt:Issuer"]!;
         var audience = _configuration["Jwt:Audience"]!;
-        var expiresInMinutes = int.Parse(_configuration["Jwt:ExpiresInMinutes"]!);
+        var expiresInSetting = _configuration["Jwt:ExpiresInMinutes"];
+        var expiresInMinutes = 60;
+        if (int.TryParse(expiresInSetting, out var parsedMinutes) && parsedMinutes > 0)
+        {
+            expiresInMinutes = parsedMinutes;
+        }
+
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
         var claims = new[]

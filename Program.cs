@@ -1,5 +1,9 @@
 using System.Text;
 using LevelUpLifeBackend.Data;
+using LevelUpLifeBackend.Infrastructure.Http;
+using LevelUpLifeBackend.Infrastructure.Http.Context;
+using LevelUpLifeBackend.Infrastructure.Http.Events;
+using LevelUpLifeBackend.Infrastructure.Http.Handlers;
 using LevelUpLifeBackend.Repositories;
 using LevelUpLifeBackend.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -35,6 +39,31 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 // Repositorios y Servicios de Jugador
 builder.Services.AddScoped<IPlayerRepository, PlayerRepository>();
 builder.Services.AddScoped<IPlayerService, PlayerService>();
+
+// HTTP base client infrastructure (Issue #45)
+builder.Services.Configure<BaseHttpClientOptions>(
+    builder.Configuration.GetSection(BaseHttpClientOptions.SectionName)
+);
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddSingleton<IGlobalErrorPublisher, GlobalErrorPublisher>();
+builder.Services.AddScoped<IRequestCredentialAccessor, HttpContextCredentialAccessor>();
+builder.Services.AddScoped<ISessionResetService, HttpContextSessionResetService>();
+builder.Services.AddTransient<AuthSessionHandler>();
+builder.Services.AddTransient<GlobalErrorHandler>();
+builder.Services
+    .AddHttpClient<IBaseApiClient, BaseApiClient>((serviceProvider, client) =>
+    {
+        var options = serviceProvider
+            .GetRequiredService<Microsoft.Extensions.Options.IOptions<BaseHttpClientOptions>>()
+            .Value;
+
+        if (!string.IsNullOrWhiteSpace(options.BaseUrl))
+        {
+            client.BaseAddress = new Uri(options.BaseUrl);
+        }
+    })
+    .AddHttpMessageHandler<AuthSessionHandler>()
+    .AddHttpMessageHandler<GlobalErrorHandler>();
 
 // Configuración de JWT
 // Esto le dice al framework cómo validar los tokens que llegan en los requests.
