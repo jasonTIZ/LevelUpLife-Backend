@@ -30,4 +30,11 @@ public static class HabitMapper
             IsActive = habit.IsActive,
         };
     }
+
+    public static void UpdateEntity(UpdateHabitRequestDto dto, Habit existingHabit)
+    {
+        existingHabit.Discipline.Id = dto.DisciplineId;
+        existingHabit.Title = dto.Title;
+        existingHabit.Description = dto.Description;
+    }
 }

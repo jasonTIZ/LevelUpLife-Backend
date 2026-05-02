@@ -80,7 +80,7 @@ public class HabitsController : ControllerBase
             );
         }
     }
-  
+
     // [Authorize] //
     [HttpGet("active")]
     public async Task<IActionResult> GetActiveHabits(
@@ -112,11 +112,7 @@ public class HabitsController : ControllerBase
             if (pagedResult.Items == null || !pagedResult.Items.Any())
             {
                 return BadRequest(
-                    new
-                    {
-                        success = false,
-                        message = "No se encontraron hábitos para el usuario.",
-                    }
+                    new { success = false, message = "No se encontraron hábitos para el usuario." }
                 );
             }
 
@@ -144,6 +140,59 @@ public class HabitsController : ControllerBase
                 {
                     success = false,
                     message = "Ocurrió un error inesperado al procesar la solicitud.",
+                }
+            );
+        }
+    }
+
+    // [Authorize] //
+    [HttpPut("{id}")]
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateHabitRequestDto dto)
+    {
+        if (id != dto.Id)
+        {
+            return BadRequest(
+                new { success = false, message = "El ID de la ruta no coincide con el del cuerpo." }
+            );
+        }
+
+        try
+        {
+            //var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userIdString = Request.Headers["X-User-Id"].FirstOrDefault();
+
+            if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out int userId))
+            {
+                return Unauthorized(new { success = false, message = "Acceso no autorizado." });
+            }
+
+            var updatedHabit = await _habitService.UpdateHabitAsync(dto);
+
+            if (updatedHabit == null)
+            {
+                return NotFound(
+                    new { success = false, message = $"El hábito que desea editar no existe." }
+                );
+            }
+
+            return Ok(
+                new
+                {
+                    success = true,
+                    message = "Hábito actualizado exitosamente!",
+                    data = updatedHabit,
+                }
+            );
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al actualizar: {ex.Message}");
+            return StatusCode(
+                500,
+                new
+                {
+                    success = false,
+                    message = "Ocurrió un error inesperado al intentar actualizar el hábito.",
                 }
             );
         }
