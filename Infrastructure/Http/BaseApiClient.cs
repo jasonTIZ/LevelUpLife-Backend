@@ -54,17 +54,34 @@ public sealed class BaseApiClient : IBaseApiClient
         return _httpClient.SendAsync(request, cancellationToken);
     }
 
-    private string BuildPath(string relativePath)
+    private string BuildPath(string? relativePath)
     {
+        if (string.IsNullOrWhiteSpace(_options.BaseUrl))
+        {
+            throw new InvalidOperationException(
+                $"Outbound HTTP calls require '{BaseHttpClientOptions.SectionName}:BaseUrl' in configuration. "
+                + "Set a non-empty absolute URL so the HttpClient BaseAddress is configured."
+            );
+        }
+
         var prefix = NormalizeSegment(_options.ApiPrefix);
         var path = NormalizeSegment(relativePath);
-        return $"{prefix}/{path}";
+        return string.IsNullOrEmpty(prefix)
+            ? path
+            : string.IsNullOrEmpty(path)
+                ? prefix
+                : $"{prefix}/{path}";
     }
 
-    private static string NormalizeSegment(string value)
+    /// <summary>Trims whitespace and leading/trailing slashes; null or whitespace becomes empty.</summary>
+    private static string NormalizeSegment(string? value)
     {
-        var normalized = value.Trim();
-        normalized = normalized.Trim('/');
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        var normalized = value.Trim().Trim('/');
         return normalized;
     }
 }

@@ -1,3 +1,4 @@
+using System.Net.Http.Headers;
 using Microsoft.Extensions.Options;
 
 namespace LevelUpLifeBackend.Infrastructure.Http.Context;
@@ -18,20 +19,31 @@ public sealed class HttpContextCredentialAccessor : IRequestCredentialAccessor
 
     public string? GetBearerToken()
     {
-        var authorizationHeader = _httpContextAccessor.HttpContext?.Request.Headers.Authorization.ToString();
-        if (string.IsNullOrWhiteSpace(authorizationHeader))
+        var context = _httpContextAccessor.HttpContext;
+        if (context is null)
         {
             return null;
         }
 
-        const string bearerPrefix = "Bearer ";
-        if (!authorizationHeader.StartsWith(bearerPrefix, StringComparison.OrdinalIgnoreCase))
+        var values = context.Request.Headers.Authorization;
+        if (values.Count == 0)
         {
             return null;
         }
 
-        var token = authorizationHeader[bearerPrefix.Length..].Trim();
-        return string.IsNullOrWhiteSpace(token) ? null : token;
+        // Use the first value (StringValues.ToString() can join multiples with commas).
+        var raw = values[0];
+        if (string.IsNullOrWhiteSpace(raw) || !AuthenticationHeaderValue.TryParse(raw, out var parsed))
+        {
+            return null;
+        }
+
+        if (!string.Equals(parsed.Scheme, "Bearer", StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        return string.IsNullOrWhiteSpace(parsed.Parameter) ? null : parsed.Parameter;
     }
 
     public string? GetSessionId()

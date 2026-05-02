@@ -2,6 +2,11 @@
 
 This backend now provides a single reusable outbound HTTP client via `IBaseApiClient`.
 
+## Configuration
+
+- Set `ExternalApi:BaseUrl` to a non-empty absolute URL (for example `https://api.example.com`) before calling `IBaseApiClient`. The typed `HttpClient` uses it as `BaseAddress`. If it is missing or whitespace, outbound calls throw `InvalidOperationException` with a configuration hint.
+- `ExternalApi:ApiPrefix` defaults to `/v1` and is normalized together with each relative path (null-safe segments).
+
 ## Rules
 
 - Do not create `new HttpClient()` inside services/repositories.
