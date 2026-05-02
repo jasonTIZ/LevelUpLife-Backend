@@ -4,27 +4,21 @@ namespace LevelUpLifeBackend.Infrastructure.Http.Context;
 
 public sealed class HttpContextSessionResetService : ISessionResetService
 {
-    private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly ISecureCredentialStorage _credentialStorage;
     private readonly BaseHttpClientOptions _options;
 
     public HttpContextSessionResetService(
-        IHttpContextAccessor httpContextAccessor,
+        ISecureCredentialStorage credentialStorage,
         IOptions<BaseHttpClientOptions> options
     )
     {
-        _httpContextAccessor = httpContextAccessor;
+        _credentialStorage = credentialStorage;
         _options = options.Value;
     }
 
     public Task ResetAsync(CancellationToken cancellationToken = default)
     {
-        var context = _httpContextAccessor.HttpContext;
-        if (context is null)
-        {
-            return Task.CompletedTask;
-        }
-
-        context.Response.Cookies.Delete(_options.SessionCookieName);
+        _credentialStorage.ClearCredentials();
         return Task.CompletedTask;
     }
 }

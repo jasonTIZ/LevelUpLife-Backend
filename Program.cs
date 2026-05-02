@@ -46,7 +46,7 @@ builder.Services.Configure<BaseHttpClientOptions>(
 );
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton<IGlobalErrorPublisher, GlobalErrorPublisher>();
-builder.Services.AddScoped<IRequestCredentialAccessor, HttpContextCredentialAccessor>();
+builder.Services.AddScoped<ISecureCredentialStorage, SecureCredentialStorage>();
 builder.Services.AddScoped<ISessionResetService, HttpContextSessionResetService>();
 builder.Services.AddTransient<AuthSessionHandler>();
 builder.Services.AddTransient<GlobalErrorHandler>();

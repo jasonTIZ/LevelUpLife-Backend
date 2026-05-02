@@ -1,5 +1,6 @@
 using LevelUpLifeBackend.DTOs.Requests;
 using LevelUpLifeBackend.Services;
+using LevelUpLifeBackend.Infrastructure.Http.Context;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LevelUpLifeBackend.Controllers;
@@ -9,10 +10,14 @@ namespace LevelUpLifeBackend.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
+    private readonly ISessionResetService _sessionResetService;
+    private readonly ISecureCredentialStorage _credentialStorage;
 
-    public AuthController(IAuthService authService)
+    public AuthController(IAuthService authService, ISessionResetService sessionResetService, ISecureCredentialStorage credentialStorage)
     {
         _authService = authService;
+        _sessionResetService = sessionResetService;
+        _credentialStorage = credentialStorage;
     }
 
     // POST api/auth/login
@@ -26,7 +31,18 @@ public class AuthController : ControllerBase
         if (result is null)
             return Unauthorized(new { success = false, message = "Credenciales inválidas." });
 
+        // PERSISTENCIA: Guardamos las credenciales en el almacenamiento seguro (Cookie cifrada)
+        _credentialStorage.SaveCredentials(result.Token, string.Empty);
+
         return Ok(new { success = true, data = result });
+    }
+
+    // POST api/auth/logout
+    [HttpPost("logout")]
+    public async Task<IActionResult> Logout()
+    {
+        await _sessionResetService.ResetAsync();
+        return Ok(new { success = true, message = "Sesión cerrada correctamente." });
     }
 
     // POST api/auth/register
