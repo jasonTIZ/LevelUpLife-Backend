@@ -11,23 +11,23 @@ public static class RepetitionCriteriaMapper
         return new RepetitionCriteria
         {
             HabitTaskId = taskId,
-            NumRepetitionsObjective = dto.NumRepetitionsObjective ?? 0,
-            TypeUnityMeasurementUnit = dto.TypeUnityMeasurementUnit ?? MeasurementUnit.REPS,
-            StatusIsPartialAllowed = dto.StatusIsPartialAllowed ?? false,
-            StatusRepetitionsCriteriaIsActive = dto.StatusRepetitionsCriteriaIsActive ?? true,
+            NumRepetitionsObjective = dto.Repetitions ?? 0,
+            TypeUnityMeasurementUnit = dto.MeasurementUnit ?? Models.MeasurementUnit.REPS,
+            StatusIsPartialAllowed = dto.IsPartialAllowed ?? false,
+            StatusRepetitionsCriteriaIsActive = dto.IsActive ?? true,
         };
     }
 
-    public static RepetitionCriteriaResponseDto ToResponse(RepetitionCriteria repetitionCriteria)
+    public static RepetitionCriteriaResponseDto ToResponse(RepetitionCriteria entity)
     {
         return new RepetitionCriteriaResponseDto
         {
-            Id = repetitionCriteria.Id,
-            HabitTaskId = repetitionCriteria.HabitTaskId,
-            NumRepetitionsObjective = repetitionCriteria.NumRepetitionsObjective,
-            TypeUnityMeasurementUnit = repetitionCriteria.TypeUnityMeasurementUnit,
-            StatusIsPartialAllowed = repetitionCriteria.StatusIsPartialAllowed,
-            StatusRepetitionsCriteriaIsActive = repetitionCriteria.StatusRepetitionsCriteriaIsActive,
+            Id = entity.Id,
+            HabitTaskId = entity.HabitTaskId,
+            Repetitions = entity.NumRepetitionsObjective,
+            MeasurementUnit = entity.TypeUnityMeasurementUnit,
+            IsPartialAllowed = entity.StatusIsPartialAllowed,
+            IsActive = entity.StatusRepetitionsCriteriaIsActive,
         };
     }
 }

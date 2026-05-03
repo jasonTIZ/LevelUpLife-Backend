@@ -1,5 +1,7 @@
 using System.Text;
 using LevelUpLifeBackend.Data;
+using LevelUpLifeBackend.Models;
+using Npgsql.NameTranslation;
 using LevelUpLifeBackend.Infrastructure.Errors;
 using LevelUpLifeBackend.Infrastructure.Http;
 using LevelUpLifeBackend.Infrastructure.Http.Context;
@@ -29,7 +31,10 @@ static string GetRequiredSetting(IConfiguration configuration, string key)
 
 // Add services to the container.
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter())
+    );
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
@@ -98,19 +103,16 @@ var jwtKey = GetRequiredSetting(builder.Configuration, "Jwt:Key");
 var jwtIssuer = GetRequiredSetting(builder.Configuration, "Jwt:Issuer");
 var jwtAudience = GetRequiredSetting(builder.Configuration, "Jwt:Audience");
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-var jwtKey = builder.Configuration["Jwt:Key"]!;
-builder
-    .Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
             ValidateAudience = true,
-            ValidateLifetime = true, // Rechaza tokens expirados
+            ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidAudience = builder.Configuration["Jwt:Audience"],
+            ValidIssuer = jwtIssuer,
+            ValidAudience = jwtAudience,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
         };
     });
