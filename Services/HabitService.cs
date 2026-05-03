@@ -99,4 +99,18 @@ public class HabitService : IHabitService
             PageSize = pageSize,
         };
     }
+
+    public async Task<HabitResponseDto?> UpdateHabitAsync(UpdateHabitRequestDto dto)
+    {
+        var existingHabit = await _habitRepository.GetByIdAsync(dto.Id);
+
+        if(existingHabit == null) return null;
+
+        HabitMapper.UpdateEntity(dto, existingHabit);
+
+        await _habitRepository.UpdateHabitAsync(existingHabit);
+
+        var updatedHabit = await _habitRepository.GetByIdAsync(dto.Id);
+        return HabitMapper.ToResponse(updatedHabit!);
+    }
 }

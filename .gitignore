@@ -1,3 +1,6 @@
+# Ignorar carpetas de compilación
+bin/
+obj/
 appsettings.Development.json
 appsettings.json
 obj/

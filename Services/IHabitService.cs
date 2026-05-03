@@ -12,4 +12,5 @@ public interface IHabitService
         int pageSize,
         int userId
     );
+    Task<HabitResponseDto?> UpdateHabitAsync(UpdateHabitRequestDto dto);
 }
