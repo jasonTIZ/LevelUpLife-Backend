@@ -6,15 +6,15 @@ namespace LevelUpLifeBackend.Infrastructure.Http.Handlers;
 
 public sealed class AuthSessionHandler : DelegatingHandler
 {
-    private readonly IRequestCredentialAccessor _credentialAccessor;
+    private readonly ISecureCredentialStorage _credentialStorage;
     private readonly BaseHttpClientOptions _options;
 
     public AuthSessionHandler(
-        IRequestCredentialAccessor credentialAccessor,
+        ISecureCredentialStorage credentialStorage,
         IOptions<BaseHttpClientOptions> options
     )
     {
-        _credentialAccessor = credentialAccessor;
+        _credentialStorage = credentialStorage;
         _options = options.Value;
     }
 
@@ -23,17 +23,20 @@ public sealed class AuthSessionHandler : DelegatingHandler
         CancellationToken cancellationToken
     )
     {
-        var bearerToken = _credentialAccessor.GetBearerToken();
-        if (!string.IsNullOrWhiteSpace(bearerToken))
+        var credentials = _credentialStorage.GetCredentials();
+        
+        if (credentials != null)
         {
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", bearerToken);
-        }
+            if (!string.IsNullOrWhiteSpace(credentials.Jwt))
+            {
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", credentials.Jwt);
+            }
 
-        var sessionId = _credentialAccessor.GetSessionId();
-        if (!string.IsNullOrWhiteSpace(sessionId))
-        {
-            request.Headers.Remove(_options.SessionCookieName);
-            request.Headers.Add(_options.SessionCookieName, sessionId);
+            if (!string.IsNullOrWhiteSpace(credentials.SessionId))
+            {
+                // Attach SESSION_ID as a Cookie header
+                request.Headers.Add("Cookie", $"{_options.SessionCookieName}={credentials.SessionId}");
+            }
         }
 
         return base.SendAsync(request, cancellationToken);

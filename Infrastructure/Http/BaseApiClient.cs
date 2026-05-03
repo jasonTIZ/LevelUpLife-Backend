@@ -1,7 +1,6 @@
 using System.Net.Http.Json;
-using System.Net.Http.Headers;
-using System.Text;
 using System.Text.Json;
+using LevelUpLifeBackend.Infrastructure.Errors;
 using Microsoft.Extensions.Options;
 
 namespace LevelUpLifeBackend.Infrastructure.Http;
@@ -11,36 +10,70 @@ public sealed class BaseApiClient : IBaseApiClient
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private readonly HttpClient _httpClient;
     private readonly BaseHttpClientOptions _options;
+    private readonly IApiErrorParser _apiErrorParser;
 
-    public BaseApiClient(HttpClient httpClient, IOptions<BaseHttpClientOptions> options)
+    public BaseApiClient(
+        HttpClient httpClient,
+        IOptions<BaseHttpClientOptions> options,
+        IApiErrorParser apiErrorParser
+    )
     {
         _httpClient = httpClient;
         _options = options.Value;
+        _apiErrorParser = apiErrorParser;
     }
 
-    public Task<HttpResponseMessage> GetAsync(
+    public async Task<HttpResponseMessage> GetAsync(
         string relativePath,
         CancellationToken cancellationToken = default
-    ) => _httpClient.GetAsync(BuildPath(relativePath), cancellationToken);
+    )
+    {
+        var response = await _httpClient
+            .GetAsync(BuildPath(relativePath), cancellationToken)
+            .ConfigureAwait(false);
+        await EnsureSuccessAsync(response, cancellationToken).ConfigureAwait(false);
+        return response;
+    }
 
-    public Task<HttpResponseMessage> DeleteAsync(
+    public async Task<HttpResponseMessage> DeleteAsync(
         string relativePath,
         CancellationToken cancellationToken = default
-    ) => _httpClient.DeleteAsync(BuildPath(relativePath), cancellationToken);
+    )
+    {
+        var response = await _httpClient
+            .DeleteAsync(BuildPath(relativePath), cancellationToken)
+            .ConfigureAwait(false);
+        await EnsureSuccessAsync(response, cancellationToken).ConfigureAwait(false);
+        return response;
+    }
 
-    public Task<HttpResponseMessage> PostAsJsonAsync<TBody>(
+    public async Task<HttpResponseMessage> PostAsJsonAsync<TBody>(
         string relativePath,
         TBody body,
         CancellationToken cancellationToken = default
-    ) => _httpClient.PostAsJsonAsync(BuildPath(relativePath), body, JsonOptions, cancellationToken);
+    )
+    {
+        var response = await _httpClient
+            .PostAsJsonAsync(BuildPath(relativePath), body, JsonOptions, cancellationToken)
+            .ConfigureAwait(false);
+        await EnsureSuccessAsync(response, cancellationToken).ConfigureAwait(false);
+        return response;
+    }
 
-    public Task<HttpResponseMessage> PutAsJsonAsync<TBody>(
+    public async Task<HttpResponseMessage> PutAsJsonAsync<TBody>(
         string relativePath,
         TBody body,
         CancellationToken cancellationToken = default
-    ) => _httpClient.PutAsJsonAsync(BuildPath(relativePath), body, JsonOptions, cancellationToken);
+    )
+    {
+        var response = await _httpClient
+            .PutAsJsonAsync(BuildPath(relativePath), body, JsonOptions, cancellationToken)
+            .ConfigureAwait(false);
+        await EnsureSuccessAsync(response, cancellationToken).ConfigureAwait(false);
+        return response;
+    }
 
-    public Task<HttpResponseMessage> PatchAsJsonAsync<TBody>(
+    public async Task<HttpResponseMessage> PatchAsJsonAsync<TBody>(
         string relativePath,
         TBody body,
         CancellationToken cancellationToken = default
@@ -51,7 +84,19 @@ public sealed class BaseApiClient : IBaseApiClient
             Content = JsonContent.Create(body, options: JsonOptions),
         };
 
-        return _httpClient.SendAsync(request, cancellationToken);
+        var response = await _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        await EnsureSuccessAsync(response, cancellationToken).ConfigureAwait(false);
+        return response;
+    }
+
+    private async Task EnsureSuccessAsync(HttpResponseMessage response, CancellationToken cancellationToken)
+    {
+        if (response.IsSuccessStatusCode)
+        {
+            return;
+        }
+
+        throw await _apiErrorParser.ParseApiErrorAsync(response, cancellationToken).ConfigureAwait(false);
     }
 
     private string BuildPath(string? relativePath)
@@ -73,7 +118,6 @@ public sealed class BaseApiClient : IBaseApiClient
                 : $"{prefix}/{path}";
     }
 
-    /// <summary>Trims whitespace and leading/trailing slashes; null or whitespace becomes empty.</summary>
     private static string NormalizeSegment(string? value)
     {
         if (string.IsNullOrWhiteSpace(value))
@@ -81,7 +125,6 @@ public sealed class BaseApiClient : IBaseApiClient
             return string.Empty;
         }
 
-        var normalized = value.Trim().Trim('/');
-        return normalized;
+        return value.Trim().Trim('/');
     }
 }
