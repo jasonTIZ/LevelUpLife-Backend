@@ -12,6 +12,7 @@ This backend now provides a single reusable outbound HTTP client via `IBaseApiCl
 - Do not create `new HttpClient()` inside services/repositories.
 - Use `IBaseApiClient` for outbound integrations.
 - Base path `/v1` is prepended automatically to every request path.
+- On non-success responses, `BaseApiClient` throws typed `AppError` via `IApiErrorParser` (see [Global error handling (Issue #46)](../Errors/README.md)).
 
 ## Interceptors
 
