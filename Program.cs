@@ -50,7 +50,13 @@ if (string.IsNullOrWhiteSpace(connectionString))
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(
         connectionString,
-        npgsqlOptions => npgsqlOptions.MapEnum<MeasurementUnit>("ENUM_MEASUREMENT_UNIT", nameTranslator: new NpgsqlNullNameTranslator())
+        npgsqlOptions => npgsqlOptions
+            .MapEnum<MeasurementUnit>("ENUM_MEASUREMENT_UNIT", nameTranslator: new NpgsqlNullNameTranslator())
+            .MapEnum<TaskDifficulty>("ENUM_DIFFICULTY", nameTranslator: new NpgsqlNullNameTranslator())
+            .MapEnum<TaskFrequency>("ENUM_FREQUENCY", nameTranslator: new NpgsqlNullNameTranslator())
+            .MapEnum<TaskPeriodUnit>("ENUM_PERIOD_UNIT", nameTranslator: new NpgsqlNullNameTranslator())
+            .MapEnum<TaskCompletionCriteria>("ENUM_COMPLETION_CRITERIA", nameTranslator: new NpgsqlNullNameTranslator())
+            .MapEnum<TaskEvidence>("ENUM_EVIDENCE", nameTranslator: new NpgsqlNullNameTranslator())
     ));
 
 // Repositorios y Servicios de Hábitos

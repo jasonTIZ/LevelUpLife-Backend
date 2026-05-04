@@ -36,7 +36,20 @@ public class HabitService : IHabitService
             var taskResponses = new List<HabitTaskResponseDto>();
             foreach (var taskDto in request.Tasks)
             {
-                var task = await _habitTaskRepository.AddAsync(new HabitTask { HabitId = habit.Id });
+                var task = await _habitTaskRepository.AddAsync(new HabitTask
+                {
+                    HabitId = habit.Id,
+                    Title = taskDto.Title,
+                    Description = taskDto.Description,
+                    WeekDays = taskDto.WeekDays,
+                    Difficulty = taskDto.Difficulty!.Value,
+                    Frequency = taskDto.Frequency!.Value,
+                    PeriodLength = taskDto.PeriodLength!.Value,
+                    PeriodUnit = taskDto.PeriodUnit!.Value,
+                    StartDate = taskDto.StartDate!.Value,
+                    CompletionCriteria = taskDto.CompletionCriteria!.Value,
+                    Evidence = taskDto.Evidence,
+                });
                 var criteria = await _repetitionCriteriaRepository.AddAsync(
                     RepetitionCriteriaMapper.ToEntity(task.Id, taskDto.RepetitionCriteria!)
                 );
