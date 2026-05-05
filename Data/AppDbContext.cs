@@ -156,7 +156,7 @@ public class AppDbContext : DbContext
 
             entity.Property(e => e.HabitId).HasColumnName("ID_HABIT");
             entity.HasOne(e => e.Habit)
-                  .WithMany()
+                  .WithMany(h => h.Tasks)
                   .HasForeignKey(e => e.HabitId)
                   .OnDelete(DeleteBehavior.Cascade);
 

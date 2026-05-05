@@ -19,4 +19,11 @@ public class RepetitionCriteriaRepository : IRepetitionCriteriaRepository
         await _context.SaveChangesAsync();
         return criteria;
     }
+
+    public async Task<RepetitionCriteria?> GetByTaskIdAsync(int taskId)
+    {
+        return await _context.RepetitionCriteriaRecords
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.HabitTaskId == taskId);
+    }
 }

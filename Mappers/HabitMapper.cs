@@ -28,6 +28,13 @@ public static class HabitMapper
             UserName = habit.User.UserName,
             CategoryName = habit.Discipline.Category.Name,
             IsActive = habit.IsActive,
+            Tasks = habit.Tasks.Select(t => new HabitTaskResponseDto
+            {
+                Id = t.Id,
+                RepetitionCriteria = t.RepetitionCriteria is null
+                    ? null
+                    : RepetitionCriteriaMapper.ToResponse(t.RepetitionCriteria),
+            }).ToList(),
         };
     }
 
