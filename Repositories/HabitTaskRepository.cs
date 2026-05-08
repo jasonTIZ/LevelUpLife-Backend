@@ -27,6 +27,12 @@ public class HabitTaskRepository : IHabitTaskRepository
             .ToListAsync();
     }
 
+    public async Task<EvidenceStorage?> GetEvidenceByIdAsync(int taskId, int id)
+    {
+        return await _context.EvidenceStorages
+            .FirstOrDefaultAsync(e => e.HabitTaskId == taskId && e.Id == id);
+    }
+
     public async Task<bool> ExistsAsync(int taskId)
     {
         return await _context.HabitTasks.AnyAsync(ht => ht.Id == taskId);

@@ -41,4 +41,31 @@ public class HabitTaskController : ControllerBase
             });
         }
     }
+
+    [HttpGet("{taskId:int}/evidences/{id:int}")]
+    public async Task<IActionResult> GetEvidenceById(int taskId, int id)
+    {
+        try
+        {
+            var evidence = await _habitTaskService.GetEvidenceByIdAsync(taskId, id);
+            return Ok(evidence);
+        }
+        catch (NotFoundError ex)
+        {
+            return NotFound(ex.Payload);
+        }
+        catch (ServerError ex)
+        {
+            return StatusCode(ex.HttpStatusCode, ex.Payload);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new ErrorResponse
+            {
+                Code = 500,
+                Message = "An unexpected error occurred.",
+                Details = ex.Message
+            });
+        }
+    }
 }

@@ -69,14 +69,66 @@ public class HabitTaskServiceTests
     }
 
     [Fact]
-    public async Task GetEvidencesByTaskIdAsync_WhenRepositoryThrowsException_ThrowsServerError()
+    public async Task GetEvidenceByIdAsync_WhenEvidenceExists_ReturnsEvidence()
+    {
+        // Arrange
+        int taskId = 1;
+        int id = 10;
+        var evidence = new EvidenceStorage
+        {
+            Id = id,
+            HabitTaskId = taskId,
+            EvidencePathUrl = "http://example.com/evidence.jpg",
+            UploadedAt = DateTime.UtcNow
+        };
+
+        _habitTaskRepositoryMock.Setup(repo => repo.ExistsAsync(taskId)).ReturnsAsync(true);
+        _habitTaskRepositoryMock.Setup(repo => repo.GetEvidenceByIdAsync(taskId, id)).ReturnsAsync(evidence);
+
+        // Act
+        var result = await _habitTaskService.GetEvidenceByIdAsync(taskId, id);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(id, result.Id);
+        Assert.Equal(taskId, result.HabitTaskId);
+    }
+
+    [Fact]
+    public async Task GetEvidenceByIdAsync_WhenTaskDoesNotExist_ThrowsNotFoundError()
+    {
+        // Arrange
+        int taskId = 1;
+        _habitTaskRepositoryMock.Setup(repo => repo.ExistsAsync(taskId)).ReturnsAsync(false);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<NotFoundError>(() => _habitTaskService.GetEvidenceByIdAsync(taskId, 10));
+        Assert.Equal(404, exception.HttpStatusCode);
+    }
+
+    [Fact]
+    public async Task GetEvidenceByIdAsync_WhenEvidenceDoesNotExist_ThrowsNotFoundError()
+    {
+        // Arrange
+        int taskId = 1;
+        int id = 10;
+        _habitTaskRepositoryMock.Setup(repo => repo.ExistsAsync(taskId)).ReturnsAsync(true);
+        _habitTaskRepositoryMock.Setup(repo => repo.GetEvidenceByIdAsync(taskId, id)).ReturnsAsync((EvidenceStorage)null);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<NotFoundError>(() => _habitTaskService.GetEvidenceByIdAsync(taskId, id));
+        Assert.Equal(404, exception.HttpStatusCode);
+    }
+
+    [Fact]
+    public async Task GetEvidenceByIdAsync_WhenRepositoryThrowsException_ThrowsServerError()
     {
         // Arrange
         int taskId = 1;
         _habitTaskRepositoryMock.Setup(repo => repo.ExistsAsync(taskId)).ThrowsAsync(new Exception("Database error"));
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<ServerError>(() => _habitTaskService.GetEvidencesByTaskIdAsync(taskId));
+        var exception = await Assert.ThrowsAsync<ServerError>(() => _habitTaskService.GetEvidenceByIdAsync(taskId, 10));
         Assert.Equal(500, exception.HttpStatusCode);
     }
 }
