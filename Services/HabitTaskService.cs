@@ -1,0 +1,55 @@
+using LevelUpLifeBackend.DTOs.Responses;
+using LevelUpLifeBackend.Infrastructure.Errors;
+using LevelUpLifeBackend.Repositories;
+
+namespace LevelUpLifeBackend.Services;
+
+public class HabitTaskService : IHabitTaskService
+{
+    private readonly IHabitTaskRepository _habitTaskRepository;
+
+    public HabitTaskService(IHabitTaskRepository habitTaskRepository)
+    {
+        _habitTaskRepository = habitTaskRepository;
+    }
+
+    public async Task<IEnumerable<EvidenceStorageResponseDto>> GetEvidencesByTaskIdAsync(int taskId)
+    {
+        try
+        {
+            if (!await _habitTaskRepository.ExistsAsync(taskId))
+            {
+                throw new NotFoundError(new ErrorResponse
+                {
+                    Code = 404,
+                    Message = $"Task with ID {taskId} not found.",
+                    Details = "The requested habit task does not exist in the database."
+                });
+            }
+
+            var evidences = await _habitTaskRepository.GetEvidencesByTaskIdAsync(taskId);
+
+            return evidences.Select(e => new EvidenceStorageResponseDto
+            {
+                Id = e.Id,
+                HabitTaskId = e.HabitTaskId,
+                EvidencePathUrl = e.EvidencePathUrl,
+                HealthDataJson = e.HealthDataJson,
+                UploadedAt = e.UploadedAt
+            });
+        }
+        catch (NotFoundError)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            throw new ServerError(500, new ErrorResponse
+            {
+                Code = 500,
+                Message = "An unexpected error occurred while fetching evidence records.",
+                Details = ex.Message
+            });
+        }
+    }
+}
