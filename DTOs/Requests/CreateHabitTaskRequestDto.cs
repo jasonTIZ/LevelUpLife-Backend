@@ -4,12 +4,16 @@ using LevelUpLifeBackend.Models;
 namespace LevelUpLifeBackend.DTOs.Requests;
 
 public class CreateHabitTaskRequestDto
+    : IValidatableObject
 {
     [Required(ErrorMessage = "El título de la tarea es obligatorio.")]
     [StringLength(100, MinimumLength = 3, ErrorMessage = "El título debe tener entre 3 y 100 caracteres.")]
     public string Title { get; set; } = string.Empty;
 
     public string? Description { get; set; }
+
+    [Range(1, int.MaxValue, ErrorMessage = "La disciplina de la tarea no es válida.")]
+    public int? HabitDisciplineId { get; set; }
 
     public string? WeekDays { get; set; }
 
@@ -33,7 +37,37 @@ public class CreateHabitTaskRequestDto
     public TaskCompletionCriteria? CompletionCriteria { get; set; }
 
     public TaskEvidence? Evidence { get; set; }
-
-    [Required(ErrorMessage = "Los criterios de repetición de la tarea son obligatorios.")]
     public CreateRepetitionCriteriaRequestDto? RepetitionCriteria { get; set; }
+
+    [Range(0, int.MaxValue, ErrorMessage = "El XP no puede ser negativo.")]
+    public int? XpValue { get; set; }
+
+    public bool? IsActive { get; set; }
+
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        if (CompletionCriteria == TaskCompletionCriteria.REPETITIONS && RepetitionCriteria is null)
+        {
+            yield return new ValidationResult(
+                "Los criterios de repetición son obligatorios cuando el criterio de completado es REPETITIONS.",
+                [nameof(RepetitionCriteria)]
+            );
+        }
+
+        if (CompletionCriteria != TaskCompletionCriteria.REPETITIONS && RepetitionCriteria is not null)
+        {
+            yield return new ValidationResult(
+                "RepetitionCriteria solo debe enviarse cuando el criterio de completado es REPETITIONS.",
+                [nameof(RepetitionCriteria)]
+            );
+        }
+
+        if (CompletionCriteria != TaskCompletionCriteria.EVIDENCE && Evidence is not null)
+        {
+            yield return new ValidationResult(
+                "Evidence solo debe enviarse cuando el criterio de completado es EVIDENCE.",
+                [nameof(Evidence)]
+            );
+        }
+    }
 }
