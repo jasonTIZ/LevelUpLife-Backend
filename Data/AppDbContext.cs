@@ -20,6 +20,7 @@ public class AppDbContext : DbContext
     public DbSet<Habit> Habits { get; set; }
     public DbSet<HabitTask> HabitTasks { get; set; }
     public DbSet<RepetitionCriteria> RepetitionCriteriaRecords { get; set; }
+    public DbSet<EvidenceStorage> EvidenceStorages { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -197,6 +198,23 @@ public class AppDbContext : DbContext
             entity.Property(e => e.StatusIsPartialAllowed).HasColumnName("STATUS_IS_PARTIAL_ALLOWED");
             entity.Property(e => e.StatusRepetitionsCriteriaIsActive)
                   .HasColumnName("STATUS_REPETITIONS_CRITERIA_IS_ACTIVE");
+        });
+
+        modelBuilder.Entity<EvidenceStorage>(entity =>
+        {
+            entity.ToTable("LULT_HABIT_TASK_EVIDENCE_STORAGE");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("ID_EVIDENCE");
+
+            entity.Property(e => e.HabitTaskId).HasColumnName("ID_HABIT_TASK");
+            entity.HasOne(e => e.HabitTask)
+                  .WithMany()
+                  .HasForeignKey(e => e.HabitTaskId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.Property(e => e.EvidencePathUrl).HasColumnName("DSC_EVIDENCE_PATH_URL");
+            entity.Property(e => e.HealthDataJson).HasColumnName("DSC_HEALTH_DATA_JSON");
+            entity.Property(e => e.UploadedAt).HasColumnName("FEC_UPLOADED");
         });
     }
 }

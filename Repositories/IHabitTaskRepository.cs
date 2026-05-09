@@ -7,4 +7,7 @@ public interface IHabitTaskRepository
     Task<HabitTask> AddAsync(HabitTask task);
     Task<bool> ExistsActiveByHabitIdAsync(int habitId);
     Task<HabitTask?> GetByIdWithCriteriaAsync(int id);
+    Task<IEnumerable<EvidenceStorage>> GetEvidencesByTaskIdAsync(int taskId);
+    Task<EvidenceStorage?> GetEvidenceByIdAsync(int taskId, int id);
+    Task<bool> ExistsAsync(int taskId);
 }
