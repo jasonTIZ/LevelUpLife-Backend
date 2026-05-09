@@ -28,4 +28,6 @@ public class UpdateHabitRequestDto
     [Required(ErrorMessage = "Él hábito debe de estar obligatoriamente asociado a un usuario.")]
     [Range(1, int.MaxValue, ErrorMessage = "Usuario inválido.")]
     public int UserId { get; set; }
+
+    public List<UpdateHabitTaskRequestDto>? Tasks { get; set; }
 }
