@@ -70,6 +70,9 @@ builder.Services.AddScoped<IRepetitionCriteriaRepository, RepetitionCriteriaRepo
 builder.Services.AddScoped<IHabitCategoryRepository, HabitCategoryRepository>();
 builder.Services.AddScoped<IHabitCategoryService, HabitCategoryService>();
 
+builder.Services.AddScoped<IHabitDisciplineRepository, HabitDisciplineRepository>();
+builder.Services.AddScoped<IHabitDisciplineService, HabitDisciplineService>();
+
 // Repositorios y Servicios de Autenticación
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
