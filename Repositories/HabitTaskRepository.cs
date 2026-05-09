@@ -1,5 +1,6 @@
 using LevelUpLifeBackend.Data;
 using LevelUpLifeBackend.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace LevelUpLifeBackend.Repositories;
 
@@ -17,5 +18,23 @@ public class HabitTaskRepository : IHabitTaskRepository
         await _context.HabitTasks.AddAsync(task);
         await _context.SaveChangesAsync();
         return task;
+    }
+
+    public async Task<IEnumerable<EvidenceStorage>> GetEvidencesByTaskIdAsync(int taskId)
+    {
+        return await _context.EvidenceStorages
+            .Where(e => e.HabitTaskId == taskId)
+            .ToListAsync();
+    }
+
+    public async Task<EvidenceStorage?> GetEvidenceByIdAsync(int taskId, int id)
+    {
+        return await _context.EvidenceStorages
+            .FirstOrDefaultAsync(e => e.HabitTaskId == taskId && e.Id == id);
+    }
+
+    public async Task<bool> ExistsAsync(int taskId)
+    {
+        return await _context.HabitTasks.AnyAsync(ht => ht.Id == taskId);
     }
 }

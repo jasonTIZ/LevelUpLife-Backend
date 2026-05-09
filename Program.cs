@@ -64,10 +64,14 @@ builder.Services.AddScoped<IHabitRepository, HabitRepository>();
 builder.Services.AddScoped<IHabitService, HabitService>();
 
 builder.Services.AddScoped<IHabitTaskRepository, HabitTaskRepository>();
+builder.Services.AddScoped<IHabitTaskService, HabitTaskService>();
 builder.Services.AddScoped<IRepetitionCriteriaRepository, RepetitionCriteriaRepository>();
 // Services and Repositories of Habit Category
 builder.Services.AddScoped<IHabitCategoryRepository, HabitCategoryRepository>();
 builder.Services.AddScoped<IHabitCategoryService, HabitCategoryService>();
+
+builder.Services.AddScoped<IHabitDisciplineRepository, HabitDisciplineRepository>();
+builder.Services.AddScoped<IHabitDisciplineService, HabitDisciplineService>();
 
 // Repositorios y Servicios de Autenticación
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
