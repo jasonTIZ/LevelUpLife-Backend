@@ -29,6 +29,8 @@ public class HabitRepository : IHabitRepository
             .Include(h => h.Discipline)
                 .ThenInclude(d => d.Category)
             .Include(h => h.User)
+            .Include(h => h.Tasks)
+                .ThenInclude(t => t.RepetitionCriteria)
             .FirstOrDefaultAsync(habit => habit.Id == id);
     }
 
