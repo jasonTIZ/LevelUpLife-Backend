@@ -9,10 +9,12 @@ namespace LevelUpLifeBackend.Controllers;
 public class HabitTaskController : ControllerBase
 {
     private readonly IHabitTaskService _habitTaskService;
+    private readonly IRepetitionCriteriaService _repetitionCriteriaService;
 
-    public HabitTaskController(IHabitTaskService habitTaskService)
+    public HabitTaskController(IHabitTaskService habitTaskService, IRepetitionCriteriaService repetitionCriteriaService)
     {
         _habitTaskService = habitTaskService;
+        _repetitionCriteriaService = repetitionCriteriaService;
     }
 
     [HttpGet("{taskId:int}/evidences")]
@@ -22,6 +24,33 @@ public class HabitTaskController : ControllerBase
         {
             var evidences = await _habitTaskService.GetEvidencesByTaskIdAsync(taskId);
             return Ok(evidences);
+        }
+        catch (NotFoundError ex)
+        {
+            return NotFound(ex.Payload);
+        }
+        catch (ServerError ex)
+        {
+            return StatusCode(ex.HttpStatusCode, ex.Payload);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new ErrorResponse
+            {
+                Code = 500,
+                Message = "An unexpected error occurred.",
+                Details = ex.Message
+            });
+        }
+    }
+
+    [HttpDelete("{taskId:int}/repetition-criteria/{id:int}")]
+    public async Task<IActionResult> DeactivateRepetitionCriteria(int taskId, int id)
+    {
+        try
+        {
+            await _repetitionCriteriaService.DeactivateAsync(taskId, id);
+            return Ok(new { message = "Repetition criteria deactivated successfully." });
         }
         catch (NotFoundError ex)
         {

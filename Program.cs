@@ -66,6 +66,7 @@ builder.Services.AddScoped<IHabitService, HabitService>();
 builder.Services.AddScoped<IHabitTaskRepository, HabitTaskRepository>();
 builder.Services.AddScoped<IHabitTaskService, HabitTaskService>();
 builder.Services.AddScoped<IRepetitionCriteriaRepository, RepetitionCriteriaRepository>();
+builder.Services.AddScoped<IRepetitionCriteriaService, RepetitionCriteriaService>();
 // Services and Repositories of Habit Category
 builder.Services.AddScoped<IHabitCategoryRepository, HabitCategoryRepository>();
 builder.Services.AddScoped<IHabitCategoryService, HabitCategoryService>();
