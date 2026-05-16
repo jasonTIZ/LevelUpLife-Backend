@@ -20,6 +20,19 @@ public class HabitTaskRepository : IHabitTaskRepository
         return task;
     }
 
+    public Task<bool> ExistsActiveByHabitIdAsync(int habitId)
+    {
+        return _context.HabitTasks.AsNoTracking().AnyAsync(t => t.HabitId == habitId && t.IsActive);
+    }
+
+    public Task<HabitTask?> GetByIdWithCriteriaAsync(int id)
+    {
+        return _context.HabitTasks
+            .AsNoTracking()
+            .Include(t => t.RepetitionCriteria)
+            .FirstOrDefaultAsync(t => t.Id == id);
+    }
+
     public async Task<IEnumerable<EvidenceStorage>> GetEvidencesByTaskIdAsync(int taskId)
     {
         return await _context.EvidenceStorages

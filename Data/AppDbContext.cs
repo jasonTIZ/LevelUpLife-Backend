@@ -163,17 +163,24 @@ public class AppDbContext : DbContext
                   .WithMany(h => h.Tasks)
                   .HasForeignKey(e => e.HabitId)
                   .OnDelete(DeleteBehavior.Cascade);
+            entity.Property(e => e.HabitDisciplineId).HasColumnName("ID_HABIT_DISCIPLINE");
+            entity.HasOne(e => e.HabitDiscipline)
+                .WithMany()
+                .HasForeignKey(e => e.HabitDisciplineId);
 
             entity.Property(e => e.Title).HasColumnName("DSC_HABIT_TASK_TITLE").HasMaxLength(100).IsRequired();
             entity.Property(e => e.Description).HasColumnName("DSC_HABIT_TASK_DESCRIPTION");
             entity.Property(e => e.WeekDays).HasColumnName("DSC_HABIT_TASK_WEEK_DAYS");
             entity.Property(e => e.Difficulty).HasColumnName("TYPE_HABIT_TASK_DIFFICULTY");
+            entity.Property(e => e.XpValue).HasColumnName("NUM_HABIT_TASK_XP_VALUE");
             entity.Property(e => e.Frequency).HasColumnName("TYPE_HABIT_TASK_FREQUENCY");
             entity.Property(e => e.PeriodLength).HasColumnName("NUM_HABIT_TASK_PERIOD_LENGTH");
             entity.Property(e => e.PeriodUnit).HasColumnName("TYPE_HABIT_TASK_PERIOD_UNIT");
             entity.Property(e => e.StartDate).HasColumnName("FEC_HABIT_TASK_START_DATE");
+            entity.Property(e => e.IsCompleted).HasColumnName("STATUS_HABIT_TASK_IS_COMPLETED");
             entity.Property(e => e.CompletionCriteria).HasColumnName("TYPE_COMPLETION_CRITERIA");
             entity.Property(e => e.Evidence).HasColumnName("TYPE_HABIT_TASK_EVIDENCE");
+            entity.Property(e => e.IsActive).HasColumnName("STATUS_HABIT_TASK_IS_ACTIVE");
         });
 
         modelBuilder.Entity<RepetitionCriteria>(entity =>
