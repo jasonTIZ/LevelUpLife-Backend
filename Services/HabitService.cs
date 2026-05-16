@@ -232,14 +232,37 @@ public class HabitService : IHabitService
     public async Task<HabitResponseDto?> UpdateHabitAsync(UpdateHabitRequestDto dto)
     {
         var existingHabit = await _habitRepository.GetByIdAsync(dto.Id);
+        if (existingHabit is null) return null;
 
-        if(existingHabit == null) return null;
+        await using var transaction = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            HabitMapper.UpdateEntity(dto, existingHabit);
+            await _habitRepository.UpdateHabitAsync(existingHabit);
 
-        HabitMapper.UpdateEntity(dto, existingHabit);
+            if (dto.Tasks is not null)
+            {
+                foreach (var taskDto in dto.Tasks)
+                {
+                    if (taskDto.RepetitionCriteria is null) continue;
 
-        await _habitRepository.UpdateHabitAsync(existingHabit);
+                    var criteria = await _repetitionCriteriaRepository.GetByTaskIdAsync(taskDto.TaskId);
+                    if (criteria is null) continue;
 
-        var updatedHabit = await _habitRepository.GetByIdAsync(dto.Id);
-        return HabitMapper.ToResponse(updatedHabit!);
+                    RepetitionCriteriaMapper.UpdateEntity(criteria, taskDto.RepetitionCriteria);
+                    await _repetitionCriteriaRepository.UpdateAsync(criteria);
+                }
+            }
+
+            await transaction.CommitAsync();
+
+            var updatedHabit = await _habitRepository.GetByIdAsync(dto.Id);
+            return HabitMapper.ToResponse(updatedHabit!);
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
     }
 }

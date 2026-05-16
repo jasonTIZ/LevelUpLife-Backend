@@ -8,6 +8,7 @@ public class Habit
     public string Title { get; set; }
     public string Description { get; set; }
     public bool IsActive { get; set; }
+    public List<HabitTask> Tasks { get; set; } = [];
 
     public Habit()
     {

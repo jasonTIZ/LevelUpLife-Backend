@@ -22,6 +22,9 @@ public class AppDbContext : DbContext
     public DbSet<RepetitionCriteria> RepetitionCriteriaRecords { get; set; }
     public DbSet<EvidenceStorage> EvidenceStorages { get; set; }
 
+    public DbSet<RewardItemType> RewardItemTypes { get; set; }
+    public DbSet<RewardItem> RewardItems { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -157,7 +160,7 @@ public class AppDbContext : DbContext
 
             entity.Property(e => e.HabitId).HasColumnName("ID_HABIT");
             entity.HasOne(e => e.Habit)
-                  .WithMany()
+                  .WithMany(h => h.Tasks)
                   .HasForeignKey(e => e.HabitId)
                   .OnDelete(DeleteBehavior.Cascade);
             entity.Property(e => e.HabitDisciplineId).HasColumnName("ID_HABIT_DISCIPLINE");
@@ -215,6 +218,34 @@ public class AppDbContext : DbContext
             entity.Property(e => e.EvidencePathUrl).HasColumnName("DSC_EVIDENCE_PATH_URL");
             entity.Property(e => e.HealthDataJson).HasColumnName("DSC_HEALTH_DATA_JSON");
             entity.Property(e => e.UploadedAt).HasColumnName("FEC_UPLOADED");
+        });
+
+        modelBuilder.Entity<RewardItemType>(entity =>
+        {
+            entity.ToTable("LULM_REWARD_ITEM_TYPE");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("ID_REWARD_ITEM_TYPE");
+            entity.Property(e => e.Name).HasColumnName("DSC_REWARD_ITEM_TYPE_NAME").HasMaxLength(100).IsRequired();
+            entity.Property(e => e.Description).HasColumnName("DSC_REWARD_ITEM_TYPE_DESC");
+            entity.Property(e => e.IsActive).HasColumnName("STATUS_REWARD_ITEM_TYPE_IS_ACTIVE");
+        });
+
+        modelBuilder.Entity<RewardItem>(entity =>
+        {
+            entity.ToTable("LULM_REWARD_ITEM");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("ID_REWARD_ITEM");
+
+            entity.Property(e => e.TypeId).HasColumnName("ID_REWARD_ITEM_TYPE");
+            entity.HasOne(e => e.Type)
+                  .WithMany()
+                  .HasForeignKey(e => e.TypeId);
+
+            entity.Property(e => e.Name).HasColumnName("DSC_REWARD_ITEM_NAME").HasMaxLength(100).IsRequired();
+            entity.Property(e => e.Description).HasColumnName("DSC_REWARD_ITEM_DESCRIPTION");
+            entity.Property(e => e.CostGold).HasColumnName("NUM_REWARD_ITEM_COST_GOLD");
+            entity.Property(e => e.EffectValue).HasColumnName("NUM_REWARD_ITEM_EFFECT_VALUE");
+            entity.Property(e => e.IsActive).HasColumnName("STATUS_REWARD_ITEM_IS_ACTIVE");
         });
     }
 }
