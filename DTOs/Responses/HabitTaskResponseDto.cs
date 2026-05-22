@@ -13,6 +13,7 @@ public class HabitTaskResponseDto
     public int PeriodLength { get; set; }
     public TaskPeriodUnit PeriodUnit { get; set; }
     public DateOnly StartDate { get; set; }
+    public bool IsCompleted { get; set; }
     public bool IsActive { get; set; }
     public string? WeekDays { get; set; }
     public TaskDifficulty Difficulty { get; set; }

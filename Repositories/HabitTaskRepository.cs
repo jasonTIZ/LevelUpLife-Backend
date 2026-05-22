@@ -1,4 +1,5 @@
 using LevelUpLifeBackend.Data;
+using LevelUpLifeBackend.DTOs.Requests;
 using LevelUpLifeBackend.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,6 +12,38 @@ public class HabitTaskRepository : IHabitTaskRepository
     public HabitTaskRepository(AppDbContext context)
     {
         _context = context;
+    }
+
+    public async Task<(IReadOnlyList<HabitTask> Items, int Total)> ListFilteredAsync(
+        HabitTaskListQueryDto filter
+    )
+    {
+        var query = _context.HabitTasks.AsNoTracking();
+
+        if (filter.HabitId.HasValue)
+            query = query.Where(t => t.HabitId == filter.HabitId.Value);
+
+        if (filter.DisciplineId.HasValue)
+            query = query.Where(t => t.HabitDisciplineId == filter.DisciplineId.Value);
+
+        if (filter.Difficulty.HasValue)
+            query = query.Where(t => t.Difficulty == filter.Difficulty.Value);
+
+        if (filter.Frequency.HasValue)
+            query = query.Where(t => t.Frequency == filter.Frequency.Value);
+
+        if (filter.IsActive.HasValue)
+            query = query.Where(t => t.IsActive == filter.IsActive.Value);
+
+        var total = await query.CountAsync();
+
+        var items = await query
+            .OrderBy(t => t.Id)
+            .Skip(filter.Page * filter.Size)
+            .Take(filter.Size)
+            .ToListAsync();
+
+        return (items, total);
     }
 
     public async Task<HabitTask> AddAsync(HabitTask task)

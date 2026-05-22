@@ -25,6 +25,25 @@ public class HabitTaskController : ControllerBase
         _repetitionCriteriaService = repetitionCriteriaService;
     }
 
+    [HttpGet]
+    public async Task<IActionResult> List([FromQuery] HabitTaskListQueryDto query)
+    {
+        if (!ModelState.IsValid)
+        {
+            return ValidationProblem(ModelState);
+        }
+
+        try
+        {
+            var result = await _habitTaskService.ListAsync(query);
+            return Ok(result);
+        }
+        catch (ServerError ex)
+        {
+            return StatusCode(ex.HttpStatusCode, ex.Payload);
+        }
+    }
+
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateStandaloneHabitTaskRequestDto request)
     {

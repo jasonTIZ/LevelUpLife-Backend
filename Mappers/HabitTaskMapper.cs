@@ -18,6 +18,7 @@ public static class HabitTaskMapper
             PeriodLength = task.PeriodLength,
             PeriodUnit = task.PeriodUnit,
             StartDate = task.StartDate,
+            IsCompleted = task.IsCompleted,
             IsActive = task.IsActive,
             WeekDays = task.WeekDays,
             Difficulty = task.Difficulty,

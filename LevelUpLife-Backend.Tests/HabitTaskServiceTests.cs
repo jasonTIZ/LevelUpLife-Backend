@@ -1,3 +1,4 @@
+using LevelUpLifeBackend.DTOs.Requests;
 using LevelUpLifeBackend.DTOs.Responses;
 using LevelUpLifeBackend.Infrastructure.Errors;
 using LevelUpLifeBackend.Models;
@@ -17,6 +18,59 @@ public class HabitTaskServiceTests
     {
         _habitTaskRepositoryMock = new Mock<IHabitTaskRepository>();
         _habitTaskService = new HabitTaskService(_habitTaskRepositoryMock.Object);
+    }
+
+    [Fact]
+    public async Task ListAsync_WithDefaultPagination_ReturnsPagedResult()
+    {
+        var query = new HabitTaskListQueryDto();
+        var tasks = new List<HabitTask>
+        {
+            new() { Id = 1, HabitId = 1, Title = "Task A", Difficulty = TaskDifficulty.MEDIUM },
+        };
+
+        _habitTaskRepositoryMock
+            .Setup(repo => repo.ListFilteredAsync(It.Is<HabitTaskListQueryDto>(q => q.Page == 0 && q.Size == 10)))
+            .ReturnsAsync((tasks, 1));
+
+        var result = await _habitTaskService.ListAsync(query);
+
+        Assert.Equal(0, result.Page);
+        Assert.Equal(10, result.Size);
+        Assert.Equal(1, result.Total);
+        Assert.Single(result.Data);
+    }
+
+    [Fact]
+    public async Task ListAsync_WithDifficultyFilter_ReturnsOnlyMatchingTasks()
+    {
+        var query = new HabitTaskListQueryDto { Difficulty = TaskDifficulty.HARD };
+        var tasks = new List<HabitTask>
+        {
+            new() { Id = 2, HabitId = 1, Title = "Hard Task", Difficulty = TaskDifficulty.HARD },
+        };
+
+        _habitTaskRepositoryMock
+            .Setup(repo => repo.ListFilteredAsync(It.Is<HabitTaskListQueryDto>(q => q.Difficulty == TaskDifficulty.HARD)))
+            .ReturnsAsync((tasks, 1));
+
+        var result = await _habitTaskService.ListAsync(query);
+
+        Assert.All(result.Data, t => Assert.Equal(TaskDifficulty.HARD, t.Difficulty));
+    }
+
+    [Fact]
+    public async Task ListAsync_WhenRepositoryThrowsException_ThrowsServerError()
+    {
+        _habitTaskRepositoryMock
+            .Setup(repo => repo.ListFilteredAsync(It.IsAny<HabitTaskListQueryDto>()))
+            .ThrowsAsync(new Exception("Database error"));
+
+        var exception = await Assert.ThrowsAsync<ServerError>(() =>
+            _habitTaskService.ListAsync(new HabitTaskListQueryDto())
+        );
+
+        Assert.Equal(500, exception.HttpStatusCode);
     }
 
     [Fact]
