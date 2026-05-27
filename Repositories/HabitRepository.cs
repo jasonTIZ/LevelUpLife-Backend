@@ -34,6 +34,19 @@ public class HabitRepository : IHabitRepository
             .FirstOrDefaultAsync(habit => habit.Id == id);
     }
 
+    public async Task<Habit?> GetByIdForUserAsync(int id, int userId)
+    {
+        return await _context.Habits
+            .AsNoTracking()
+            .Where(h => h.Id == id && h.User.Id == userId)
+            .Include(h => h.Discipline)
+                .ThenInclude(d => d.Category)
+            .Include(h => h.User)
+            .Include(h => h.Tasks)
+                .ThenInclude(t => t.RepetitionCriteria)
+            .FirstOrDefaultAsync();
+    }
+
     public async Task<(IEnumerable<Habit> Habits, int TotalCount)> GetActiveHabitsPaginatedAsync(
         int pageNumber,
         int pageSize,

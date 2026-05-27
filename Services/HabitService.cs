@@ -146,13 +146,9 @@ public class HabitService : IHabitService
 
     public async Task<HabitResponseDto?> GetByIdAsync(int id, int userId)
     {
-        var habit = await _habitRepository.GetByIdAsync(id);
-        if (habit is null || habit.User.Id != userId)
-        {
-            return null;
-        }
-
-        return HabitMapper.ToResponse(habit);
+        // The repository filters by authenticated user to avoid leaking data.
+        var habit = await _habitRepository.GetByIdForUserAsync(id, userId);
+        return habit is null ? null : HabitMapper.ToResponse(habit);
     }
 
     public async Task<PagedResultDto<HabitResponseDto>> GetActiveHabitsPaginatedAsync(
