@@ -37,24 +37,9 @@ public class HabitService : IHabitService
             var taskResponses = new List<HabitTaskResponseDto>();
             foreach (var taskDto in request.Tasks)
             {
-                var task = await _habitTaskRepository.AddAsync(new HabitTask
-                {
-                    HabitId = habit.Id,
-                    HabitDisciplineId = taskDto.HabitDisciplineId ?? habit.Discipline.Id,
-                    Title = taskDto.Title,
-                    Description = taskDto.Description,
-                    WeekDays = taskDto.WeekDays,
-                    Difficulty = taskDto.Difficulty!.Value,
-                    XpValue = taskDto.XpValue ?? 0,
-                    Frequency = taskDto.Frequency!.Value,
-                    PeriodLength = taskDto.PeriodLength!.Value,
-                    PeriodUnit = taskDto.PeriodUnit!.Value,
-                    StartDate = taskDto.StartDate!.Value,
-                    CompletionCriteria = taskDto.CompletionCriteria!.Value,
-                    Evidence = taskDto.Evidence,
-                    IsActive = taskDto.IsActive ?? true,
-                    IsCompleted = false,
-                });
+                var task = await _habitTaskRepository.AddAsync(
+                    HabitTaskMapper.ToEntity(taskDto, habit.Id, habit.Discipline.Id)
+                );
                 RepetitionCriteria? criteria = null;
                 if (taskDto.CompletionCriteria == TaskCompletionCriteria.REPETITIONS)
                 {
@@ -62,27 +47,12 @@ public class HabitService : IHabitService
                         RepetitionCriteriaMapper.ToEntity(task.Id, taskDto.RepetitionCriteria!)
                     );
                 }
-                taskResponses.Add(new HabitTaskResponseDto
+                var taskResponse = HabitTaskMapper.ToResponse(task);
+                if (criteria is not null)
                 {
-                    Id = task.Id,
-                    HabitId = task.HabitId,
-                    HabitDisciplineId = task.HabitDisciplineId,
-                    Title = task.Title,
-                    Description = task.Description,
-                    XpValue = task.XpValue,
-                    PeriodLength = task.PeriodLength,
-                    PeriodUnit = task.PeriodUnit,
-                    StartDate = task.StartDate,
-                    IsActive = task.IsActive,
-                    WeekDays = task.WeekDays,
-                    Difficulty = task.Difficulty,
-                    Frequency = task.Frequency,
-                    CompletionCriteria = task.CompletionCriteria,
-                    Evidence = task.Evidence,
-                    RepetitionCriteria = criteria is null
-                        ? null
-                        : RepetitionCriteriaMapper.ToResponse(criteria),
-                });
+                    taskResponse.RepetitionCriteria = RepetitionCriteriaMapper.ToResponse(criteria);
+                }
+                taskResponses.Add(taskResponse);
             }
 
             await transaction.CommitAsync();
@@ -145,24 +115,9 @@ public class HabitService : IHabitService
         await using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
-            var task = await _habitTaskRepository.AddAsync(new HabitTask
-            {
-                HabitId = request.HabitId,
-                HabitDisciplineId = request.HabitDisciplineId ?? habit.Discipline.Id,
-                Title = request.Title.Trim(),
-                Description = request.Description,
-                WeekDays = request.WeekDays,
-                Difficulty = request.Difficulty!.Value,
-                XpValue = request.XpValue ?? 0,
-                Frequency = request.Frequency!.Value,
-                PeriodLength = request.PeriodLength ?? 1,
-                PeriodUnit = request.PeriodUnit ?? TaskPeriodUnit.DAYS,
-                StartDate = request.StartDate ?? DateOnly.FromDateTime(DateTime.UtcNow),
-                CompletionCriteria = request.CompletionCriteria!.Value,
-                Evidence = request.Evidence,
-                IsActive = request.IsActive ?? true,
-                IsCompleted = false,
-            });
+            var task = await _habitTaskRepository.AddAsync(
+                HabitTaskMapper.ToEntity(request, habit.Discipline.Id)
+            );
 
             RepetitionCriteria? criteria = null;
             if (request.CompletionCriteria == TaskCompletionCriteria.REPETITIONS)
