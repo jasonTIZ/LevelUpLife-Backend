@@ -5,7 +5,7 @@ namespace LevelUpLifeBackend.Services;
 
 public interface IHabitTaskService
 {
-    Task<HabitTaskPagedResponseDto> ListAsync(HabitTaskListQueryDto query);
+    Task<HabitTaskPagedResponseDto> ListByHabitAsync(int habitId, int userId, HabitTaskListQueryDto query);
     Task<IEnumerable<EvidenceStorageResponseDto>> GetEvidencesByTaskIdAsync(int taskId);
     Task<EvidenceStorageResponseDto> GetEvidenceByIdAsync(int taskId, int id);
 }

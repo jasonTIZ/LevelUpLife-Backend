@@ -5,7 +5,6 @@ namespace LevelUpLifeBackend.DTOs.Requests;
 
 public class HabitTaskListQueryDto
 {
-    public int? HabitId { get; set; }
     public int? DisciplineId { get; set; }
     public TaskDifficulty? Difficulty { get; set; }
     public TaskFrequency? Frequency { get; set; }

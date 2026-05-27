@@ -15,11 +15,29 @@ public class HabitTaskService : IHabitTaskService
         _habitTaskRepository = habitTaskRepository;
     }
 
-    public async Task<HabitTaskPagedResponseDto> ListAsync(HabitTaskListQueryDto query)
+    public async Task<HabitTaskPagedResponseDto> ListByHabitAsync(
+        int habitId,
+        int userId,
+        HabitTaskListQueryDto query
+    )
     {
         try
         {
-            var (items, total) = await _habitTaskRepository.ListFilteredAsync(query);
+            if (!await _habitTaskRepository.HabitBelongsToUserAsync(habitId, userId))
+            {
+                throw new NotFoundError(new ErrorResponse
+                {
+                    Code = 404,
+                    Message = "Habit not found.",
+                    Details = $"Habit with ID {habitId} was not found for the authenticated user.",
+                });
+            }
+
+            var (items, total) = await _habitTaskRepository.ListByHabitAndUserAsync(
+                habitId,
+                userId,
+                query
+            );
 
             return new HabitTaskPagedResponseDto
             {
@@ -28,6 +46,10 @@ public class HabitTaskService : IHabitTaskService
                 Size = query.Size,
                 Total = total,
             };
+        }
+        catch (NotFoundError)
+        {
+            throw;
         }
         catch (Exception ex)
         {

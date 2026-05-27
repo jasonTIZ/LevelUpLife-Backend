@@ -1,6 +1,9 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using LevelUpLifeBackend.DTOs.Requests;
+using LevelUpLifeBackend.Infrastructure.Errors;
 using LevelUpLifeBackend.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,10 +14,55 @@ namespace LevelUpLifeBackend.Controllers;
 public class HabitsController : ControllerBase
 {
     private readonly IHabitService _habitService;
+    private readonly IHabitTaskService _habitTaskService;
 
-    public HabitsController(IHabitService habitService)
+    public HabitsController(IHabitService habitService, IHabitTaskService habitTaskService)
     {
         _habitService = habitService;
+        _habitTaskService = habitTaskService;
+    }
+
+    [Authorize]
+    [HttpGet("{habitId:int}/tasks")]
+    public async Task<IActionResult> ListHabitTasks(
+        int habitId,
+        [FromQuery] HabitTaskListQueryDto query
+    )
+    {
+        if (!ModelState.IsValid)
+        {
+            return ValidationProblem(ModelState);
+        }
+
+        var userId = ResolveAuthenticatedUserId();
+        if (userId is null)
+        {
+            return Unauthorized(new
+            {
+                code = "UNAUTHORIZED",
+                message = "Unauthorized access",
+                details = "A valid JWT is required.",
+            });
+        }
+
+        try
+        {
+            var result = await _habitTaskService.ListByHabitAsync(habitId, userId.Value, query);
+            return Ok(result);
+        }
+        catch (NotFoundError ex)
+        {
+            return NotFound(new
+            {
+                code = "HABIT_NOT_FOUND",
+                message = ex.Payload.Message,
+                details = ex.Payload.Details,
+            });
+        }
+        catch (ServerError ex)
+        {
+            return StatusCode(ex.HttpStatusCode, ex.Payload);
+        }
     }
 
     [HttpGet("{id:int}")]
@@ -196,5 +244,19 @@ public class HabitsController : ControllerBase
                 }
             );
         }
+    }
+
+    private int? ResolveAuthenticatedUserId()
+    {
+        var userIdValue =
+            User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+
+        if (string.IsNullOrWhiteSpace(userIdValue) || !int.TryParse(userIdValue, out int playerUserId))
+        {
+            return null;
+        }
+
+        return playerUserId;
     }
 }

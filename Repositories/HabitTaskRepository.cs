@@ -14,14 +14,25 @@ public class HabitTaskRepository : IHabitTaskRepository
         _context = context;
     }
 
-    public async Task<(IReadOnlyList<HabitTask> Items, int Total)> ListFilteredAsync(
+    public Task<bool> HabitBelongsToUserAsync(int habitId, int userId)
+    {
+        return _context.Habits
+            .AsNoTracking()
+            .AnyAsync(h => h.Id == habitId && EF.Property<int>(h, "UserId") == userId);
+    }
+
+    public async Task<(IReadOnlyList<HabitTask> Items, int Total)> ListByHabitAndUserAsync(
+        int habitId,
+        int userId,
         HabitTaskListQueryDto filter
     )
     {
-        var query = _context.HabitTasks.AsNoTracking();
-
-        if (filter.HabitId.HasValue)
-            query = query.Where(t => t.HabitId == filter.HabitId.Value);
+        var query = _context.HabitTasks
+            .AsNoTracking()
+            .Where(t =>
+                t.HabitId == habitId
+                && _context.Habits.Any(h => h.Id == habitId && EF.Property<int>(h, "UserId") == userId)
+            );
 
         if (filter.DisciplineId.HasValue)
             query = query.Where(t => t.HabitDisciplineId == filter.DisciplineId.Value);

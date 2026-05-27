@@ -5,7 +5,12 @@ namespace LevelUpLifeBackend.Repositories;
 
 public interface IHabitTaskRepository
 {
-    Task<(IReadOnlyList<HabitTask> Items, int Total)> ListFilteredAsync(HabitTaskListQueryDto filter);
+    Task<bool> HabitBelongsToUserAsync(int habitId, int userId);
+    Task<(IReadOnlyList<HabitTask> Items, int Total)> ListByHabitAndUserAsync(
+        int habitId,
+        int userId,
+        HabitTaskListQueryDto filter
+    );
     Task<HabitTask> AddAsync(HabitTask task);
     Task<bool> ExistsActiveByHabitIdAsync(int habitId);
     Task<HabitTask?> GetByIdWithCriteriaAsync(int id);

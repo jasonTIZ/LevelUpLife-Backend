@@ -21,19 +21,27 @@ public class HabitTaskServiceTests
     }
 
     [Fact]
-    public async Task ListAsync_WithDefaultPagination_ReturnsPagedResult()
+    public async Task ListByHabitAsync_WithDefaultPagination_ReturnsPagedResult()
     {
+        const int habitId = 1;
+        const int userId = 10;
         var query = new HabitTaskListQueryDto();
         var tasks = new List<HabitTask>
         {
-            new() { Id = 1, HabitId = 1, Title = "Task A", Difficulty = TaskDifficulty.MEDIUM },
+            new() { Id = 1, HabitId = habitId, Title = "Task A", Difficulty = TaskDifficulty.MEDIUM },
         };
 
         _habitTaskRepositoryMock
-            .Setup(repo => repo.ListFilteredAsync(It.Is<HabitTaskListQueryDto>(q => q.Page == 0 && q.Size == 10)))
+            .Setup(repo => repo.HabitBelongsToUserAsync(habitId, userId))
+            .ReturnsAsync(true);
+        _habitTaskRepositoryMock
+            .Setup(repo => repo.ListByHabitAndUserAsync(
+                habitId,
+                userId,
+                It.Is<HabitTaskListQueryDto>(q => q.Page == 0 && q.Size == 10)))
             .ReturnsAsync((tasks, 1));
 
-        var result = await _habitTaskService.ListAsync(query);
+        var result = await _habitTaskService.ListByHabitAsync(habitId, userId, query);
 
         Assert.Equal(0, result.Page);
         Assert.Equal(10, result.Size);
@@ -42,32 +50,60 @@ public class HabitTaskServiceTests
     }
 
     [Fact]
-    public async Task ListAsync_WithDifficultyFilter_ReturnsOnlyMatchingTasks()
+    public async Task ListByHabitAsync_WithDifficultyFilter_ReturnsOnlyMatchingTasks()
     {
+        const int habitId = 1;
+        const int userId = 10;
         var query = new HabitTaskListQueryDto { Difficulty = TaskDifficulty.HARD };
         var tasks = new List<HabitTask>
         {
-            new() { Id = 2, HabitId = 1, Title = "Hard Task", Difficulty = TaskDifficulty.HARD },
+            new() { Id = 2, HabitId = habitId, Title = "Hard Task", Difficulty = TaskDifficulty.HARD },
         };
 
         _habitTaskRepositoryMock
-            .Setup(repo => repo.ListFilteredAsync(It.Is<HabitTaskListQueryDto>(q => q.Difficulty == TaskDifficulty.HARD)))
+            .Setup(repo => repo.HabitBelongsToUserAsync(habitId, userId))
+            .ReturnsAsync(true);
+        _habitTaskRepositoryMock
+            .Setup(repo => repo.ListByHabitAndUserAsync(
+                habitId,
+                userId,
+                It.Is<HabitTaskListQueryDto>(q => q.Difficulty == TaskDifficulty.HARD)))
             .ReturnsAsync((tasks, 1));
 
-        var result = await _habitTaskService.ListAsync(query);
+        var result = await _habitTaskService.ListByHabitAsync(habitId, userId, query);
 
         Assert.All(result.Data, t => Assert.Equal(TaskDifficulty.HARD, t.Difficulty));
     }
 
     [Fact]
-    public async Task ListAsync_WhenRepositoryThrowsException_ThrowsServerError()
+    public async Task ListByHabitAsync_WhenHabitDoesNotBelongToUser_ThrowsNotFoundError()
     {
         _habitTaskRepositoryMock
-            .Setup(repo => repo.ListFilteredAsync(It.IsAny<HabitTaskListQueryDto>()))
+            .Setup(repo => repo.HabitBelongsToUserAsync(99, 10))
+            .ReturnsAsync(false);
+
+        var exception = await Assert.ThrowsAsync<NotFoundError>(() =>
+            _habitTaskService.ListByHabitAsync(99, 10, new HabitTaskListQueryDto())
+        );
+
+        Assert.Equal(404, exception.HttpStatusCode);
+    }
+
+    [Fact]
+    public async Task ListByHabitAsync_WhenRepositoryThrowsException_ThrowsServerError()
+    {
+        _habitTaskRepositoryMock
+            .Setup(repo => repo.HabitBelongsToUserAsync(It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(true);
+        _habitTaskRepositoryMock
+            .Setup(repo => repo.ListByHabitAndUserAsync(
+                It.IsAny<int>(),
+                It.IsAny<int>(),
+                It.IsAny<HabitTaskListQueryDto>()))
             .ThrowsAsync(new Exception("Database error"));
 
         var exception = await Assert.ThrowsAsync<ServerError>(() =>
-            _habitTaskService.ListAsync(new HabitTaskListQueryDto())
+            _habitTaskService.ListByHabitAsync(1, 10, new HabitTaskListQueryDto())
         );
 
         Assert.Equal(500, exception.HttpStatusCode);
