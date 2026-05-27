@@ -1,7 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using LevelUpLifeBackend.DTOs.Requests;
-using LevelUpLifeBackend.Infrastructure.Errors;
 using LevelUpLifeBackend.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -14,26 +13,16 @@ namespace LevelUpLifeBackend.Controllers;
 public class HabitsController : ControllerBase
 {
     private readonly IHabitService _habitService;
-    private readonly IHabitTaskService _habitTaskService;
 
-    public HabitsController(IHabitService habitService, IHabitTaskService habitTaskService)
+    public HabitsController(IHabitService habitService)
     {
         _habitService = habitService;
-        _habitTaskService = habitTaskService;
     }
 
     [Authorize]
-    [HttpGet("{habitId:int}/tasks")]
-    public async Task<IActionResult> ListHabitTasks(
-        int habitId,
-        [FromQuery] HabitTaskListQueryDto query
-    )
+    [HttpGet("{id:int}")]
+    public async Task<IActionResult> GetById(int id)
     {
-        if (!ModelState.IsValid)
-        {
-            return ValidationProblem(ModelState);
-        }
-
         var userId = ResolveAuthenticatedUserId();
         if (userId is null)
         {
@@ -45,35 +34,18 @@ public class HabitsController : ControllerBase
             });
         }
 
-        try
-        {
-            var result = await _habitTaskService.ListByHabitAsync(habitId, userId.Value, query);
-            return Ok(result);
-        }
-        catch (NotFoundError ex)
+        var habit = await _habitService.GetByIdAsync(id, userId.Value);
+
+        if (habit is null)
         {
             return NotFound(new
             {
                 code = "HABIT_NOT_FOUND",
-                message = ex.Payload.Message,
-                details = ex.Payload.Details,
+                message = "Habit not found.",
+                details = $"Habit with ID {id} was not found for the authenticated user.",
             });
         }
-        catch (ServerError ex)
-        {
-            return StatusCode(ex.HttpStatusCode, ex.Payload);
-        }
-    }
 
-    [HttpGet("{id:int}")]
-    public async Task<IActionResult> GetById(int id)
-    {
-        var habit = await _habitService.GetByIdAsync(id);
-
-        if (habit is null)
-        {
-            return NotFound();
-        }
         return Ok(habit);
     }
 

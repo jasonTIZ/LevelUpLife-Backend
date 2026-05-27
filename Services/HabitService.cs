@@ -144,10 +144,15 @@ public class HabitService : IHabitService
         }
     }
 
-    public async Task<HabitResponseDto?> GetByIdAsync(int id)
+    public async Task<HabitResponseDto?> GetByIdAsync(int id, int userId)
     {
         var habit = await _habitRepository.GetByIdAsync(id);
-        return habit is null ? null : HabitMapper.ToResponse(habit);
+        if (habit is null || habit.User.Id != userId)
+        {
+            return null;
+        }
+
+        return HabitMapper.ToResponse(habit);
     }
 
     public async Task<PagedResultDto<HabitResponseDto>> GetActiveHabitsPaginatedAsync(
