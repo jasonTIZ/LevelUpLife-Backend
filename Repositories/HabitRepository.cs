@@ -22,6 +22,18 @@ public class HabitRepository : IHabitRepository
         return habit;
     }
 
+    public async Task<Habit?> GetByIdAsync(int id)
+    {
+        return await _context.Habits
+            .AsNoTracking()
+            .Include(h => h.Discipline)
+                .ThenInclude(d => d.Category)
+            .Include(h => h.User)
+            .Include(h => h.Tasks)
+                .ThenInclude(t => t.RepetitionCriteria)
+            .FirstOrDefaultAsync(h => h.Id == id);
+    }
+
     public async Task<Habit?> GetByIdAsync(int id, int userId)
     {
         return await _context.Habits

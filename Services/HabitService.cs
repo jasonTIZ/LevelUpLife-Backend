@@ -5,7 +5,6 @@ using LevelUpLifeBackend.Infrastructure.Errors;
 using LevelUpLifeBackend.Mappers;
 using LevelUpLifeBackend.Models;
 using LevelUpLifeBackend.Repositories;
-using Microsoft.EntityFrameworkCore;
 
 namespace LevelUpLifeBackend.Services;
 
@@ -74,11 +73,7 @@ public class HabitService : IHabitService
         int userId
     )
     {
-        var habit = await _context.Habits
-            .AsNoTracking()
-            .Include(h => h.User)
-            .Include(h => h.Discipline)
-            .FirstOrDefaultAsync(h => h.Id == request.HabitId);
+        var habit = await _habitRepository.GetByIdAsync(request.HabitId);
         if (habit is null || !habit.IsActive)
         {
             throw new NotFoundError(
@@ -120,9 +115,24 @@ public class HabitService : IHabitService
         await using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
-            var task = await _habitTaskRepository.AddAsync(
-                HabitTaskMapper.ToEntity(request, habit.Discipline.Id)
-            );
+            var task = await _habitTaskRepository.AddAsync(new HabitTask
+            {
+                HabitId = request.HabitId,
+                HabitDisciplineId = request.HabitDisciplineId ?? habit.Discipline.Id,
+                Title = request.Title.Trim(),
+                Description = request.Description,
+                WeekDays = request.WeekDays,
+                Difficulty = request.Difficulty!.Value,
+                XpValue = request.XpValue ?? 0,
+                Frequency = request.Frequency!.Value,
+                PeriodLength = request.PeriodLength ?? 1,
+                PeriodUnit = request.PeriodUnit ?? TaskPeriodUnit.DAYS,
+                StartDate = request.StartDate ?? DateOnly.FromDateTime(DateTime.UtcNow),
+                CompletionCriteria = request.CompletionCriteria!.Value,
+                Evidence = request.Evidence,
+                IsActive = request.IsActive ?? true,
+                IsCompleted = false,
+            });
 
             RepetitionCriteria? criteria = null;
             if (request.CompletionCriteria == TaskCompletionCriteria.REPETITIONS)
@@ -191,12 +201,7 @@ public class HabitService : IHabitService
 
     public async Task<HabitResponseDto?> UpdateHabitAsync(UpdateHabitRequestDto dto)
     {
-        var existingHabit = await _context.Habits
-            .Include(h => h.Discipline)
-                .ThenInclude(d => d.Category)
-            .Include(h => h.User)
-            .Include(h => h.Tasks)
-            .FirstOrDefaultAsync(h => h.Id == dto.Id);
+        var existingHabit = await _habitRepository.GetByIdAsync(dto.Id);
         if (existingHabit is null) return null;
 
         await using var transaction = await _context.Database.BeginTransactionAsync();
@@ -221,13 +226,7 @@ public class HabitService : IHabitService
 
             await transaction.CommitAsync();
 
-            var updatedHabit = await _context.Habits
-                .AsNoTracking()
-                .Include(h => h.Discipline)
-                    .ThenInclude(d => d.Category)
-                .Include(h => h.User)
-                .Include(h => h.Tasks)
-                .FirstOrDefaultAsync(h => h.Id == dto.Id);
+            var updatedHabit = await _habitRepository.GetByIdAsync(dto.Id);
             return HabitMapper.ToResponse(updatedHabit!);
         }
         catch
