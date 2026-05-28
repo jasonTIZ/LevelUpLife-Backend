@@ -5,6 +5,7 @@ using LevelUpLifeBackend.Infrastructure.Errors;
 using LevelUpLifeBackend.Mappers;
 using LevelUpLifeBackend.Models;
 using LevelUpLifeBackend.Repositories;
+using Microsoft.EntityFrameworkCore;
 
 namespace LevelUpLifeBackend.Services;
 
@@ -73,7 +74,7 @@ public class HabitService : IHabitService
         int userId
     )
     {
-        var habit = await _habitRepository.GetByIdAsync(request.HabitId);
+        var habit = await _habitRepository.GetByIdAsync(request.HabitId, userId);
         if (habit is null || !habit.IsActive)
         {
             throw new NotFoundError(
@@ -83,20 +84,6 @@ public class HabitService : IHabitService
                     Message = "Habit not found",
                     Details = $"Habit with id {request.HabitId} does not exist or is inactive.",
                 }
-            );
-        }
-
-        if (habit.User.Id != userId)
-        {
-            throw new AuthError(
-                403,
-                new ErrorResponse
-                {
-                    Code = 403,
-                    Message = "Forbidden",
-                    Details = "You can only create tasks for your own habits.",
-                },
-                AuthFailureKind.Forbidden
             );
         }
 
@@ -201,7 +188,11 @@ public class HabitService : IHabitService
 
     public async Task<HabitResponseDto?> UpdateHabitAsync(UpdateHabitRequestDto dto)
     {
-        var existingHabit = await _habitRepository.GetByIdAsync(dto.Id);
+        var existingHabit = await _context.Habits
+            .Include(h => h.Discipline).ThenInclude(d => d.Category)
+            .Include(h => h.User)
+            .Include(h => h.Tasks)
+            .FirstOrDefaultAsync(h => h.Id == dto.Id);
         if (existingHabit is null) return null;
 
         await using var transaction = await _context.Database.BeginTransactionAsync();
@@ -226,7 +217,12 @@ public class HabitService : IHabitService
 
             await transaction.CommitAsync();
 
-            var updatedHabit = await _habitRepository.GetByIdAsync(dto.Id);
+            var updatedHabit = await _context.Habits
+                .AsNoTracking()
+                .Include(h => h.Discipline).ThenInclude(d => d.Category)
+                .Include(h => h.User)
+                .Include(h => h.Tasks)
+                .FirstOrDefaultAsync(h => h.Id == dto.Id);
             return HabitMapper.ToResponse(updatedHabit!);
         }
         catch
