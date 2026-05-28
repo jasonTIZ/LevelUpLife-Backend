@@ -4,7 +4,7 @@ namespace LevelUpLifeBackend.Repositories;
 
 public interface IHabitRepository
 {
-    Task<Habit?> GetByIdAsync(int id, int userId = 0);
+    Task<Habit?> GetByIdAsync(int id, int userId);
     Task<Habit> AddAsync(Habit habit);
     Task<(IEnumerable<Habit> Habits, int TotalCount)> GetActiveHabitsPaginatedAsync(
         int pageNumber,
