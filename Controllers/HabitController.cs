@@ -1,6 +1,8 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using LevelUpLifeBackend.DTOs.Requests;
 using LevelUpLifeBackend.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,15 +19,33 @@ public class HabitsController : ControllerBase
         _habitService = habitService;
     }
 
+    [Authorize]
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(int id)
     {
-        var habit = await _habitService.GetByIdAsync(id);
+        var userId = ResolveAuthenticatedUserId();
+        if (userId is null)
+        {
+            return Unauthorized(new
+            {
+                code = "UNAUTHORIZED",
+                message = "Unauthorized access",
+                details = "A valid JWT is required.",
+            });
+        }
+
+        var habit = await _habitService.GetByIdAsync(id, userId.Value);
 
         if (habit is null)
         {
-            return NotFound();
+            return NotFound(new
+            {
+                code = "HABIT_NOT_FOUND",
+                message = "Habit not found.",
+                details = $"Habit with ID {id} was not found for the authenticated user.",
+            });
         }
+
         return Ok(habit);
     }
 
@@ -196,5 +216,19 @@ public class HabitsController : ControllerBase
                 }
             );
         }
+    }
+
+    private int? ResolveAuthenticatedUserId()
+    {
+        var userIdValue =
+            User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+
+        if (string.IsNullOrWhiteSpace(userIdValue) || !int.TryParse(userIdValue, out int playerUserId))
+        {
+            return null;
+        }
+
+        return playerUserId;
     }
 }

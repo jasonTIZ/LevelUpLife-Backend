@@ -5,6 +5,7 @@ using LevelUpLifeBackend.Infrastructure.Errors;
 using LevelUpLifeBackend.Mappers;
 using LevelUpLifeBackend.Models;
 using LevelUpLifeBackend.Repositories;
+using Microsoft.EntityFrameworkCore;
 
 namespace LevelUpLifeBackend.Services;
 
@@ -37,24 +38,9 @@ public class HabitService : IHabitService
             var taskResponses = new List<HabitTaskResponseDto>();
             foreach (var taskDto in request.Tasks)
             {
-                var task = await _habitTaskRepository.AddAsync(new HabitTask
-                {
-                    HabitId = habit.Id,
-                    HabitDisciplineId = taskDto.HabitDisciplineId ?? habit.Discipline.Id,
-                    Title = taskDto.Title,
-                    Description = taskDto.Description,
-                    WeekDays = taskDto.WeekDays,
-                    Difficulty = taskDto.Difficulty!.Value,
-                    XpValue = taskDto.XpValue ?? 0,
-                    Frequency = taskDto.Frequency!.Value,
-                    PeriodLength = taskDto.PeriodLength!.Value,
-                    PeriodUnit = taskDto.PeriodUnit!.Value,
-                    StartDate = taskDto.StartDate!.Value,
-                    CompletionCriteria = taskDto.CompletionCriteria!.Value,
-                    Evidence = taskDto.Evidence,
-                    IsActive = taskDto.IsActive ?? true,
-                    IsCompleted = false,
-                });
+                var task = await _habitTaskRepository.AddAsync(
+                    HabitTaskMapper.ToEntity(taskDto, habit.Id, habit.Discipline.Id)
+                );
                 RepetitionCriteria? criteria = null;
                 if (taskDto.CompletionCriteria == TaskCompletionCriteria.REPETITIONS)
                 {
@@ -62,27 +48,12 @@ public class HabitService : IHabitService
                         RepetitionCriteriaMapper.ToEntity(task.Id, taskDto.RepetitionCriteria!)
                     );
                 }
-                taskResponses.Add(new HabitTaskResponseDto
+                var taskResponse = HabitTaskMapper.ToResponse(task);
+                if (criteria is not null)
                 {
-                    Id = task.Id,
-                    HabitId = task.HabitId,
-                    HabitDisciplineId = task.HabitDisciplineId,
-                    Title = task.Title,
-                    Description = task.Description,
-                    XpValue = task.XpValue,
-                    PeriodLength = task.PeriodLength,
-                    PeriodUnit = task.PeriodUnit,
-                    StartDate = task.StartDate,
-                    IsActive = task.IsActive,
-                    WeekDays = task.WeekDays,
-                    Difficulty = task.Difficulty,
-                    Frequency = task.Frequency,
-                    CompletionCriteria = task.CompletionCriteria,
-                    Evidence = task.Evidence,
-                    RepetitionCriteria = criteria is null
-                        ? null
-                        : RepetitionCriteriaMapper.ToResponse(criteria),
-                });
+                    taskResponse.RepetitionCriteria = RepetitionCriteriaMapper.ToResponse(criteria);
+                }
+                taskResponses.Add(taskResponse);
             }
 
             await transaction.CommitAsync();
@@ -103,7 +74,7 @@ public class HabitService : IHabitService
         int userId
     )
     {
-        var habit = await _habitRepository.GetByIdAsync(request.HabitId);
+        var habit = await _habitRepository.GetByIdAsync(request.HabitId, userId);
         if (habit is null || !habit.IsActive)
         {
             throw new NotFoundError(
@@ -113,20 +84,6 @@ public class HabitService : IHabitService
                     Message = "Habit not found",
                     Details = $"Habit with id {request.HabitId} does not exist or is inactive.",
                 }
-            );
-        }
-
-        if (habit.User.Id != userId)
-        {
-            throw new AuthError(
-                403,
-                new ErrorResponse
-                {
-                    Code = 403,
-                    Message = "Forbidden",
-                    Details = "You can only create tasks for your own habits.",
-                },
-                AuthFailureKind.Forbidden
             );
         }
 
@@ -189,9 +146,9 @@ public class HabitService : IHabitService
         }
     }
 
-    public async Task<HabitResponseDto?> GetByIdAsync(int id)
+    public async Task<HabitResponseDto?> GetByIdAsync(int id, int userId)
     {
-        var habit = await _habitRepository.GetByIdAsync(id);
+        var habit = await _habitRepository.GetByIdAsync(id, userId);
         return habit is null ? null : HabitMapper.ToResponse(habit);
     }
 
@@ -231,7 +188,11 @@ public class HabitService : IHabitService
 
     public async Task<HabitResponseDto?> UpdateHabitAsync(UpdateHabitRequestDto dto)
     {
-        var existingHabit = await _habitRepository.GetByIdAsync(dto.Id);
+        var existingHabit = await _context.Habits
+            .Include(h => h.Discipline).ThenInclude(d => d.Category)
+            .Include(h => h.User)
+            .Include(h => h.Tasks)
+            .FirstOrDefaultAsync(h => h.Id == dto.Id);
         if (existingHabit is null) return null;
 
         await using var transaction = await _context.Database.BeginTransactionAsync();
@@ -256,7 +217,12 @@ public class HabitService : IHabitService
 
             await transaction.CommitAsync();
 
-            var updatedHabit = await _habitRepository.GetByIdAsync(dto.Id);
+            var updatedHabit = await _context.Habits
+                .AsNoTracking()
+                .Include(h => h.Discipline).ThenInclude(d => d.Category)
+                .Include(h => h.User)
+                .Include(h => h.Tasks)
+                .FirstOrDefaultAsync(h => h.Id == dto.Id);
             return HabitMapper.ToResponse(updatedHabit!);
         }
         catch
