@@ -22,29 +22,23 @@ public class HabitRepository : IHabitRepository
         return habit;
     }
 
-    public async Task<Habit?> GetByIdAsync(int id)
+    public async Task<Habit?> GetByIdAsync(int id, int? userId = null)
     {
-        return await _context.Habits
+        var query = _context.Habits
             .AsNoTracking()
             .Include(h => h.Discipline)
                 .ThenInclude(d => d.Category)
             .Include(h => h.User)
             .Include(h => h.Tasks)
                 .ThenInclude(t => t.RepetitionCriteria)
-            .FirstOrDefaultAsync(habit => habit.Id == id);
-    }
+            .Where(h => h.Id == id);
 
-    public async Task<Habit?> GetByIdForUserAsync(int id, int userId)
-    {
-        return await _context.Habits
-            .AsNoTracking()
-            .Where(h => h.Id == id && h.User.Id == userId)
-            .Include(h => h.Discipline)
-                .ThenInclude(d => d.Category)
-            .Include(h => h.User)
-            .Include(h => h.Tasks)
-                .ThenInclude(t => t.RepetitionCriteria)
-            .FirstOrDefaultAsync();
+        if (userId.HasValue)
+        {
+            query = query.Where(h => h.User.Id == userId.Value);
+        }
+
+        return await query.FirstOrDefaultAsync();
     }
 
     public async Task<(IEnumerable<Habit> Habits, int TotalCount)> GetActiveHabitsPaginatedAsync(
