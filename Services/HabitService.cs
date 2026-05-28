@@ -189,6 +189,88 @@ public class HabitService : IHabitService
         }
     }
 
+    public async Task<HabitTaskResponseDto> UpdateTaskAsync(
+        int taskId,
+        CreateStandaloneHabitTaskRequestDto request,
+        int userId
+    )
+    {
+        var task = await _habitTaskRepository.GetTrackedByIdForUserAsync(taskId, userId);
+        if (task is null || task.Habit is null)
+        {
+            throw new NotFoundError(
+                new ErrorResponse
+                {
+                    Code = 404,
+                    Message = "Task not found",
+                    Details = $"Habit task with id {taskId} was not found for the authenticated user.",
+                }
+            );
+        }
+
+        if (task.HabitId != request.HabitId)
+        {
+            throw new AppError(
+                400,
+                new ErrorResponse
+                {
+                    Code = 400,
+                    Message = "Validation failed",
+                    Details = "HabitId in the request body must match the task's habit.",
+                }
+            );
+        }
+
+        if (!task.Habit.IsActive)
+        {
+            throw new NotFoundError(
+                new ErrorResponse
+                {
+                    Code = 404,
+                    Message = "Habit not found",
+                    Details = $"Habit with id {request.HabitId} does not exist or is inactive.",
+                }
+            );
+        }
+
+        await using var transaction = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            HabitTaskMapper.ApplyStandaloneRequest(request, task, task.Habit.Discipline.Id);
+            await _habitTaskRepository.UpdateAsync(task);
+
+            RepetitionCriteria? criteria = task.RepetitionCriteria;
+            if (request.CompletionCriteria == TaskCompletionCriteria.REPETITIONS)
+            {
+                if (criteria is null)
+                {
+                    criteria = await _repetitionCriteriaRepository.AddAsync(
+                        RepetitionCriteriaMapper.ToEntity(task.Id, request.RepetitionCriteria!)
+                    );
+                }
+                else
+                {
+                    RepetitionCriteriaMapper.UpdateEntity(criteria, request.RepetitionCriteria!);
+                    criteria = await _repetitionCriteriaRepository.UpdateAsync(criteria);
+                }
+            }
+
+            await transaction.CommitAsync();
+
+            if (criteria is not null)
+            {
+                task.RepetitionCriteria = criteria;
+            }
+
+            return HabitTaskMapper.ToResponse(task);
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
+    }
+
     public async Task<HabitResponseDto?> GetByIdAsync(int id)
     {
         var habit = await _habitRepository.GetByIdAsync(id);

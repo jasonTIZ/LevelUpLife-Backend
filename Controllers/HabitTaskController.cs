@@ -99,6 +99,80 @@ public class HabitTaskController : ControllerBase
         }
     }
 
+    [HttpPut("{id:int}")]
+    public async Task<IActionResult> Update(int id, [FromBody] CreateStandaloneHabitTaskRequestDto request)
+    {
+        if (!ModelState.IsValid)
+        {
+            return ValidationProblem(ModelState);
+        }
+
+        var userId = ResolveUserId();
+        if (userId is null)
+        {
+            return Unauthorized(
+                new
+                {
+                    code = "UNAUTHORIZED",
+                    message = "Unauthorized access",
+                    details = "A valid JWT or X-User-Id header is required.",
+                }
+            );
+        }
+
+        try
+        {
+            var updated = await _habitService.UpdateTaskAsync(id, request, userId.Value);
+            return Ok(updated);
+        }
+        catch (NotFoundError ex)
+        {
+            return NotFound(
+                new
+                {
+                    code = "TASK_NOT_FOUND",
+                    message = ex.Payload.Message,
+                    details = ex.Payload.Details,
+                }
+            );
+        }
+        catch (AuthError ex) when (ex.Kind == AuthFailureKind.Forbidden)
+        {
+            return StatusCode(
+                StatusCodes.Status403Forbidden,
+                new
+                {
+                    code = "FORBIDDEN",
+                    message = ex.Payload.Message,
+                    details = ex.Payload.Details,
+                }
+            );
+        }
+        catch (AppError ex) when (ex.HttpStatusCode == StatusCodes.Status400BadRequest)
+        {
+            return BadRequest(
+                new
+                {
+                    code = "VALIDATION_ERROR",
+                    message = ex.Payload.Message,
+                    details = ex.Payload.Details,
+                }
+            );
+        }
+        catch (Exception)
+        {
+            return StatusCode(
+                StatusCodes.Status500InternalServerError,
+                new
+                {
+                    code = "SERVER_ERROR",
+                    message = "Internal server error",
+                    details = "An unexpected error occurred while updating the habit task.",
+                }
+            );
+        }
+    }
+
     [HttpGet("{taskId:int}/evidences")]
     public async Task<IActionResult> GetEvidences(int taskId)
     {
