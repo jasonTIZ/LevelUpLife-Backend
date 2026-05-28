@@ -22,7 +22,7 @@ public class HabitRepository : IHabitRepository
         return habit;
     }
 
-    public async Task<Habit?> GetByIdAsync(int id, int? userId = null)
+    public async Task<Habit?> GetByIdAsync(int id, int userId = 0)
     {
         var query = _context.Habits
             .AsNoTracking()
@@ -33,9 +33,9 @@ public class HabitRepository : IHabitRepository
                 .ThenInclude(t => t.RepetitionCriteria)
             .Where(h => h.Id == id);
 
-        if (userId.HasValue)
+        if (userId > 0)
         {
-            query = query.Where(h => h.User.Id == userId.Value);
+            query = query.Where(h => h.User.Id == userId);
         }
 
         return await query.FirstOrDefaultAsync();
