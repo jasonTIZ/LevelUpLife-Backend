@@ -74,7 +74,11 @@ public class HabitService : IHabitService
         int userId
     )
     {
-        var habit = await _habitRepository.GetByIdAsync(request.HabitId, userId);
+        var habit = await _context.Habits
+            .AsNoTracking()
+            .Include(h => h.User)
+            .Include(h => h.Discipline)
+            .FirstOrDefaultAsync(h => h.Id == request.HabitId);
         if (habit is null || !habit.IsActive)
         {
             throw new NotFoundError(
@@ -84,6 +88,20 @@ public class HabitService : IHabitService
                     Message = "Habit not found",
                     Details = $"Habit with id {request.HabitId} does not exist or is inactive.",
                 }
+            );
+        }
+
+        if (habit.User.Id != userId)
+        {
+            throw new AuthError(
+                403,
+                new ErrorResponse
+                {
+                    Code = 403,
+                    Message = "Forbidden",
+                    Details = "You can only create tasks for your own habits.",
+                },
+                AuthFailureKind.Forbidden
             );
         }
 
