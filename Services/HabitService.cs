@@ -190,42 +190,26 @@ public class HabitService : IHabitService
             );
         }
 
-        await using var transaction = await _context.Database.BeginTransactionAsync();
-        try
+        HabitTaskMapper.ApplyStandaloneRequest(request, task, task.Habit.Discipline.Id);
+
+        if (request.CompletionCriteria == TaskCompletionCriteria.REPETITIONS)
         {
-            HabitTaskMapper.ApplyStandaloneRequest(request, task, task.Habit.Discipline.Id);
-            await _habitTaskRepository.UpdateAsync(task);
-
-            RepetitionCriteria? criteria = task.RepetitionCriteria;
-            if (request.CompletionCriteria == TaskCompletionCriteria.REPETITIONS)
+            if (task.RepetitionCriteria is null)
             {
-                if (criteria is null)
-                {
-                    criteria = await _repetitionCriteriaRepository.AddAsync(
-                        RepetitionCriteriaMapper.ToEntity(task.Id, request.RepetitionCriteria!)
-                    );
-                }
-                else
-                {
-                    RepetitionCriteriaMapper.UpdateEntity(criteria, request.RepetitionCriteria!);
-                    criteria = await _repetitionCriteriaRepository.UpdateAsync(criteria);
-                }
+                task.RepetitionCriteria = RepetitionCriteriaMapper.ToEntity(
+                    task.Id,
+                    request.RepetitionCriteria!
+                );
             }
-
-            await transaction.CommitAsync();
-
-            if (criteria is not null)
+            else
             {
-                task.RepetitionCriteria = criteria;
+                RepetitionCriteriaMapper.UpdateEntity(task.RepetitionCriteria, request.RepetitionCriteria!);
             }
+        }
 
-            return HabitTaskMapper.ToResponse(task);
-        }
-        catch
-        {
-            await transaction.RollbackAsync();
-            throw;
-        }
+        await _habitTaskRepository.UpdateWithRepetitionCriteriaAsync(task);
+
+        return HabitTaskMapper.ToResponse(task);
     }
 
     public async Task<HabitResponseDto?> GetByIdAsync(int id, int userId)

@@ -20,12 +20,6 @@ public class HabitTaskRepository : IHabitTaskRepository
         return task;
     }
 
-    public async Task UpdateAsync(HabitTask task)
-    {
-        _context.HabitTasks.Update(task);
-        await _context.SaveChangesAsync();
-    }
-
     public Task<HabitTask?> GetTrackedByIdForUserAsync(int taskId, int userId)
     {
         return _context.HabitTasks
@@ -35,6 +29,35 @@ public class HabitTaskRepository : IHabitTaskRepository
                 .ThenInclude(h => h.Discipline)
             .Include(t => t.RepetitionCriteria)
             .FirstOrDefaultAsync(t => t.Id == taskId && t.Habit!.User.Id == userId);
+    }
+
+    public async Task UpdateWithRepetitionCriteriaAsync(HabitTask task)
+    {
+        await using var transaction = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            _context.HabitTasks.Update(task);
+
+            if (task.RepetitionCriteria is not null)
+            {
+                if (task.RepetitionCriteria.Id == 0)
+                {
+                    await _context.RepetitionCriteriaRecords.AddAsync(task.RepetitionCriteria);
+                }
+                else
+                {
+                    _context.RepetitionCriteriaRecords.Update(task.RepetitionCriteria);
+                }
+            }
+
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
     }
 
     public Task<bool> ExistsActiveByHabitIdAsync(int habitId)

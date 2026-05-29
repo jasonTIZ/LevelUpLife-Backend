@@ -24,13 +24,12 @@ public class HabitServiceUpdateTaskTests
 
     private static HabitService CreateService(
         AppDbContext context,
-        Mock<IHabitTaskRepository> taskRepo,
-        Mock<IRepetitionCriteriaRepository>? criteriaRepo = null
+        Mock<IHabitTaskRepository> taskRepo
     )
     {
         var habitRepo = new Mock<IHabitRepository>();
-        var criteria = criteriaRepo ?? new Mock<IRepetitionCriteriaRepository>();
-        return new HabitService(habitRepo.Object, taskRepo.Object, criteria.Object, context);
+        var criteriaRepo = new Mock<IRepetitionCriteriaRepository>();
+        return new HabitService(habitRepo.Object, taskRepo.Object, criteriaRepo.Object, context);
     }
 
     private static HabitTask SampleTask(int taskId = 1, int habitId = 10, int userId = 2)
@@ -101,27 +100,20 @@ public class HabitServiceUpdateTaskTests
         await using var context = CreateInMemoryContext();
         var task = SampleTask();
         var taskRepo = new Mock<IHabitTaskRepository>();
-        var criteriaRepo = new Mock<IRepetitionCriteriaRepository>();
 
+        taskRepo.Setup(r => r.GetTrackedByIdForUserAsync(1, 2)).ReturnsAsync(task);
         taskRepo
-            .Setup(r => r.GetTrackedByIdForUserAsync(1, 2))
-            .ReturnsAsync(task);
-        taskRepo.Setup(r => r.UpdateAsync(It.IsAny<HabitTask>())).Returns(Task.CompletedTask);
-        criteriaRepo
-            .Setup(r => r.UpdateAsync(It.IsAny<RepetitionCriteria>()))
-            .ReturnsAsync((RepetitionCriteria c) => c);
+            .Setup(r => r.UpdateWithRepetitionCriteriaAsync(It.IsAny<HabitTask>()))
+            .Returns(Task.CompletedTask);
 
-        var service = CreateService(context, taskRepo, criteriaRepo);
-        var request = ValidUpdateRequest();
-
-        var result = await service.UpdateTaskAsync(1, request, userId: 2);
+        var service = CreateService(context, taskRepo);
+        var result = await service.UpdateTaskAsync(1, ValidUpdateRequest(), userId: 2);
 
         Assert.Equal("Updated title", result.Title);
         Assert.Equal(TaskDifficulty.HARD, result.Difficulty);
         Assert.NotNull(result.RepetitionCriteria);
         Assert.Equal(5, result.RepetitionCriteria!.Repetitions);
-        taskRepo.Verify(r => r.UpdateAsync(It.IsAny<HabitTask>()), Times.Once);
-        criteriaRepo.Verify(r => r.UpdateAsync(It.IsAny<RepetitionCriteria>()), Times.Once);
+        taskRepo.Verify(r => r.UpdateWithRepetitionCriteriaAsync(It.IsAny<HabitTask>()), Times.Once);
     }
 
     [Fact]
@@ -147,10 +139,9 @@ public class HabitServiceUpdateTaskTests
         taskRepo.Setup(r => r.GetTrackedByIdForUserAsync(1, 2)).ReturnsAsync(task);
 
         var service = CreateService(context, taskRepo);
-        var request = ValidUpdateRequest(habitId: 999);
 
         var ex = await Assert.ThrowsAsync<AppError>(() =>
-            service.UpdateTaskAsync(1, request, userId: 2)
+            service.UpdateTaskAsync(1, ValidUpdateRequest(habitId: 999), userId: 2)
         );
         Assert.Equal(400, ex.HttpStatusCode);
     }
