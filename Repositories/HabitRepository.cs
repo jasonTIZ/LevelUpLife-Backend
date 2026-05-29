@@ -22,7 +22,7 @@ public class HabitRepository : IHabitRepository
         return habit;
     }
 
-    public async Task<Habit?> GetByIdAsync(int id)
+    public async Task<Habit?> GetByIdAsync(int id, int userId)
     {
         return await _context.Habits
             .AsNoTracking()
@@ -31,7 +31,7 @@ public class HabitRepository : IHabitRepository
             .Include(h => h.User)
             .Include(h => h.Tasks)
                 .ThenInclude(t => t.RepetitionCriteria)
-            .FirstOrDefaultAsync(habit => habit.Id == id);
+            .FirstOrDefaultAsync(h => h.Id == id && h.User.Id == userId);
     }
 
     public async Task<(IEnumerable<Habit> Habits, int TotalCount)> GetActiveHabitsPaginatedAsync(
