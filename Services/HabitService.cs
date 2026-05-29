@@ -87,18 +87,6 @@ public class HabitService : IHabitService
             );
         }
 
-        if (await _habitTaskRepository.ExistsActiveByHabitIdAsync(request.HabitId))
-        {
-            throw new ConflictError(
-                new ErrorResponse
-                {
-                    Code = 409,
-                    Message = "TASK_ALREADY_EXISTS",
-                    Details = $"Habit {request.HabitId} already has an active task.",
-                }
-            );
-        }
-
         await using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {

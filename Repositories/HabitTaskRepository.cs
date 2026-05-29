@@ -60,11 +60,6 @@ public class HabitTaskRepository : IHabitTaskRepository
         }
     }
 
-    public Task<bool> ExistsActiveByHabitIdAsync(int habitId)
-    {
-        return _context.HabitTasks.AsNoTracking().AnyAsync(t => t.HabitId == habitId && t.IsActive);
-    }
-
     public Task<HabitTask?> GetByIdWithCriteriaAsync(int id)
     {
         return _context.HabitTasks

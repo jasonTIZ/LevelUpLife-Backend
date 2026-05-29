@@ -51,17 +51,6 @@ public class HabitTaskController : ControllerBase
             var created = await _habitService.CreateTaskAsync(request, userId.Value);
             return StatusCode(StatusCodes.Status201Created, created);
         }
-        catch (ConflictError ex) when (ex.Payload.Message == "TASK_ALREADY_EXISTS")
-        {
-            return Conflict(
-                new
-                {
-                    code = "TASK_ALREADY_EXISTS",
-                    message = "Task already exists for this habit",
-                    details = ex.Payload.Details,
-                }
-            );
-        }
         catch (NotFoundError ex)
         {
             return NotFound(
