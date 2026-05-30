@@ -253,21 +253,33 @@ public class HabitService : IHabitService
         try
         {
             HabitMapper.UpdateEntity(dto, existingHabit);
-            await _habitRepository.UpdateHabitAsync(existingHabit);
+            _context.Entry(existingHabit).Property("DisciplineId").CurrentValue = dto.DisciplineId;
 
             if (dto.Tasks is not null)
             {
                 foreach (var taskDto in dto.Tasks)
                 {
-                    if (taskDto.RepetitionCriteria is null) continue;
+                    var task = existingHabit.Tasks.FirstOrDefault(t => t.Id == taskDto.TaskId);
+                    if (task is null) continue;
 
-                    var criteria = await _repetitionCriteriaRepository.GetByTaskIdAsync(taskDto.TaskId);
-                    if (criteria is null) continue;
+                    HabitTaskMapper.ApplyNestedUpdateRequest(
+                        taskDto,
+                        task,
+                        existingHabit.Discipline.Id
+                    );
 
-                    RepetitionCriteriaMapper.UpdateEntity(criteria, taskDto.RepetitionCriteria);
-                    await _repetitionCriteriaRepository.UpdateAsync(criteria);
+                    if (taskDto.RepetitionCriteria is not null)
+                    {
+                        var criteria = await _repetitionCriteriaRepository.GetByTaskIdAsync(taskDto.TaskId);
+                        if (criteria is not null)
+                        {
+                            RepetitionCriteriaMapper.UpdateEntity(criteria, taskDto.RepetitionCriteria);
+                        }
+                    }
                 }
             }
+
+            await _habitRepository.UpdateHabitAsync(existingHabit);
 
             await transaction.CommitAsync();
 

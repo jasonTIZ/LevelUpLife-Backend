@@ -28,7 +28,6 @@ public class RepetitionCriteriaRepository : IRepetitionCriteriaRepository
 
     public async Task<RepetitionCriteria> UpdateAsync(RepetitionCriteria criteria)
     {
-        _context.RepetitionCriteriaRecords.Update(criteria);
         await _context.SaveChangesAsync();
         return criteria;
     }
