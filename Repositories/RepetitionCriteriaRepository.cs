@@ -23,6 +23,7 @@ public class RepetitionCriteriaRepository : IRepetitionCriteriaRepository
     public async Task<RepetitionCriteria?> GetByTaskIdAsync(int taskId)
     {
         return await _context.RepetitionCriteriaRecords
+            .AsNoTracking()
             .FirstOrDefaultAsync(c => c.HabitTaskId == taskId);
     }
 

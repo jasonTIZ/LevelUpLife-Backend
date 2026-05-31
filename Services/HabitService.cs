@@ -246,6 +246,7 @@ public class HabitService : IHabitService
             .Include(h => h.Discipline).ThenInclude(d => d.Category)
             .Include(h => h.User)
             .Include(h => h.Tasks)
+                .ThenInclude(t => t.RepetitionCriteria)
             .FirstOrDefaultAsync(h => h.Id == dto.Id);
         if (existingHabit is null) return null;
 
@@ -253,7 +254,6 @@ public class HabitService : IHabitService
         try
         {
             HabitMapper.UpdateEntity(dto, existingHabit);
-            _context.Entry(existingHabit).Property("DisciplineId").CurrentValue = dto.DisciplineId;
 
             if (dto.Tasks is not null)
             {
@@ -278,6 +278,8 @@ public class HabitService : IHabitService
                     }
                 }
             }
+
+            _context.Entry(existingHabit).Property("DisciplineId").CurrentValue = dto.DisciplineId;
 
             await _habitRepository.UpdateHabitAsync(existingHabit);
 
