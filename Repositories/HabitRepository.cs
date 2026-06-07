@@ -60,7 +60,6 @@ public class HabitRepository : IHabitRepository
         _context.Entry(habit.Discipline).State = EntityState.Unchanged;
         _context.Entry(habit.Discipline.Category).State = EntityState.Unchanged;
         _context.Entry(habit.User).State = EntityState.Unchanged;
-        _context.Habits.Update(habit);
         await _context.SaveChangesAsync();
     }
 }

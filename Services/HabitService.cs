@@ -87,18 +87,6 @@ public class HabitService : IHabitService
             );
         }
 
-        if (await _habitTaskRepository.ExistsActiveByHabitIdAsync(request.HabitId))
-        {
-            throw new ConflictError(
-                new ErrorResponse
-                {
-                    Code = 409,
-                    Message = "TASK_ALREADY_EXISTS",
-                    Details = $"Habit {request.HabitId} already has an active task.",
-                }
-            );
-        }
-
         await using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
@@ -144,6 +132,72 @@ public class HabitService : IHabitService
             await transaction.RollbackAsync();
             throw;
         }
+    }
+
+    public async Task<HabitTaskResponseDto> UpdateTaskAsync(
+        int taskId,
+        CreateStandaloneHabitTaskRequestDto request,
+        int userId
+    )
+    {
+        var task = await _habitTaskRepository.GetTrackedByIdForUserAsync(taskId, userId);
+        if (task is null || task.Habit is null)
+        {
+            throw new NotFoundError(
+                new ErrorResponse
+                {
+                    Code = 404,
+                    Message = "Task not found",
+                    Details = $"Habit task with id {taskId} was not found for the authenticated user.",
+                }
+            );
+        }
+
+        if (task.HabitId != request.HabitId)
+        {
+            throw new AppError(
+                400,
+                new ErrorResponse
+                {
+                    Code = 400,
+                    Message = "Validation failed",
+                    Details = "HabitId in the request body must match the task's habit.",
+                }
+            );
+        }
+
+        if (!task.Habit.IsActive)
+        {
+            throw new NotFoundError(
+                new ErrorResponse
+                {
+                    Code = 404,
+                    Message = "Habit not found",
+                    Details = $"Habit with id {request.HabitId} does not exist or is inactive.",
+                }
+            );
+        }
+
+        HabitTaskMapper.ApplyStandaloneRequest(request, task, task.Habit.Discipline.Id);
+
+        if (request.CompletionCriteria == TaskCompletionCriteria.REPETITIONS)
+        {
+            if (task.RepetitionCriteria is null)
+            {
+                task.RepetitionCriteria = RepetitionCriteriaMapper.ToEntity(
+                    task.Id,
+                    request.RepetitionCriteria!
+                );
+            }
+            else
+            {
+                RepetitionCriteriaMapper.UpdateEntity(task.RepetitionCriteria, request.RepetitionCriteria!);
+            }
+        }
+
+        await _habitTaskRepository.UpdateWithRepetitionCriteriaAsync(task);
+
+        return HabitTaskMapper.ToResponse(task);
     }
 
     public async Task<HabitResponseDto?> GetByIdAsync(int id, int userId)
@@ -192,6 +246,7 @@ public class HabitService : IHabitService
             .Include(h => h.Discipline).ThenInclude(d => d.Category)
             .Include(h => h.User)
             .Include(h => h.Tasks)
+                .ThenInclude(t => t.RepetitionCriteria)
             .FirstOrDefaultAsync(h => h.Id == dto.Id);
         if (existingHabit is null) return null;
 
@@ -199,21 +254,34 @@ public class HabitService : IHabitService
         try
         {
             HabitMapper.UpdateEntity(dto, existingHabit);
-            await _habitRepository.UpdateHabitAsync(existingHabit);
 
             if (dto.Tasks is not null)
             {
                 foreach (var taskDto in dto.Tasks)
                 {
-                    if (taskDto.RepetitionCriteria is null) continue;
+                    var task = existingHabit.Tasks.FirstOrDefault(t => t.Id == taskDto.TaskId);
+                    if (task is null) continue;
 
-                    var criteria = await _repetitionCriteriaRepository.GetByTaskIdAsync(taskDto.TaskId);
-                    if (criteria is null) continue;
+                    HabitTaskMapper.ApplyNestedUpdateRequest(
+                        taskDto,
+                        task,
+                        existingHabit.Discipline.Id
+                    );
 
-                    RepetitionCriteriaMapper.UpdateEntity(criteria, taskDto.RepetitionCriteria);
-                    await _repetitionCriteriaRepository.UpdateAsync(criteria);
+                    if (taskDto.RepetitionCriteria is not null)
+                    {
+                        var criteria = await _repetitionCriteriaRepository.GetByTaskIdAsync(taskDto.TaskId);
+                        if (criteria is not null)
+                        {
+                            RepetitionCriteriaMapper.UpdateEntity(criteria, taskDto.RepetitionCriteria);
+                        }
+                    }
                 }
             }
+
+            _context.Entry(existingHabit).Property("DisciplineId").CurrentValue = dto.DisciplineId;
+
+            await _habitRepository.UpdateHabitAsync(existingHabit);
 
             await transaction.CommitAsync();
 

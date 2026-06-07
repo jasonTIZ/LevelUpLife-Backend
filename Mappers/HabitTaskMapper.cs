@@ -6,6 +6,64 @@ namespace LevelUpLifeBackend.Mappers;
 
 public static class HabitTaskMapper
 {
+    public static void ApplyStandaloneRequest(
+        CreateStandaloneHabitTaskRequestDto request,
+        HabitTask task,
+        int habitDisciplineId
+    )
+    {
+        task.HabitDisciplineId = request.HabitDisciplineId ?? habitDisciplineId;
+        task.Title = request.Title.Trim();
+        task.Description = request.Description;
+        task.WeekDays = request.WeekDays;
+        task.Difficulty = request.Difficulty!.Value;
+        task.XpValue = request.XpValue ?? 0;
+        task.Frequency = request.Frequency!.Value;
+        task.PeriodLength = request.PeriodLength ?? 1;
+        task.PeriodUnit = request.PeriodUnit ?? TaskPeriodUnit.DAYS;
+        task.StartDate = request.StartDate ?? task.StartDate;
+        task.CompletionCriteria = request.CompletionCriteria!.Value;
+        task.Evidence = request.Evidence;
+        task.IsActive = request.IsActive ?? task.IsActive;
+    }
+
+    public static void ApplyNestedUpdateRequest(
+        UpdateHabitTaskRequestDto request,
+        HabitTask task,
+        int habitDisciplineId
+    )
+    {
+        if (request.HabitDisciplineId.HasValue)
+            task.HabitDisciplineId = request.HabitDisciplineId;
+        else if (request.Title is not null || request.Difficulty.HasValue)
+            task.HabitDisciplineId ??= habitDisciplineId;
+
+        if (request.Title is not null)
+            task.Title = request.Title.Trim();
+        if (request.Description is not null)
+            task.Description = request.Description;
+        if (request.WeekDays is not null)
+            task.WeekDays = request.WeekDays;
+        if (request.Difficulty.HasValue)
+            task.Difficulty = request.Difficulty.Value;
+        if (request.XpValue.HasValue)
+            task.XpValue = request.XpValue.Value;
+        if (request.Frequency.HasValue)
+            task.Frequency = request.Frequency.Value;
+        if (request.PeriodLength.HasValue)
+            task.PeriodLength = request.PeriodLength.Value;
+        if (request.PeriodUnit.HasValue)
+            task.PeriodUnit = request.PeriodUnit.Value;
+        if (request.StartDate.HasValue)
+            task.StartDate = request.StartDate.Value;
+        if (request.CompletionCriteria.HasValue)
+            task.CompletionCriteria = request.CompletionCriteria.Value;
+        if (request.Evidence.HasValue)
+            task.Evidence = request.Evidence;
+        if (request.IsActive.HasValue)
+            task.IsActive = request.IsActive.Value;
+    }
+
     public static HabitTask ToEntity(
         CreateHabitTaskRequestDto dto,
         int habitId,
