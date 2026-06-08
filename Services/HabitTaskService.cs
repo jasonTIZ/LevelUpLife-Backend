@@ -1,5 +1,6 @@
 using LevelUpLifeBackend.DTOs.Responses;
 using LevelUpLifeBackend.Infrastructure.Errors;
+using LevelUpLifeBackend.Mappers;
 using LevelUpLifeBackend.Repositories;
 
 namespace LevelUpLifeBackend.Services;
@@ -11,6 +12,39 @@ public class HabitTaskService : IHabitTaskService
     public HabitTaskService(IHabitTaskRepository habitTaskRepository)
     {
         _habitTaskRepository = habitTaskRepository;
+    }
+
+    public async Task<HabitTaskResponseDto> GetByIdAsync(int taskId)
+    {
+        try
+        {
+            var task = await _habitTaskRepository.GetByIdWithCriteriaAsync(taskId);
+
+            if (task is null)
+            {
+                throw new NotFoundError(new ErrorResponse
+                {
+                    Code = 404,
+                    Message = $"Task with ID {taskId} not found.",
+                    Details = "The requested habit task does not exist in the database."
+                });
+            }
+
+            return HabitTaskMapper.ToResponse(task);
+        }
+        catch (NotFoundError)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            throw new ServerError(500, new ErrorResponse
+            {
+                Code = 500,
+                Message = "An unexpected error occurred while fetching the habit task.",
+                Details = ex.Message
+            });
+        }
     }
 
     public async Task<IEnumerable<EvidenceStorageResponseDto>> GetEvidencesByTaskIdAsync(int taskId)
