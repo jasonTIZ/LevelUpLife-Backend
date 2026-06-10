@@ -5,6 +5,8 @@ namespace LevelUpLifeBackend.Services;
 
 public interface IPlayerService
 {
+    Task<GetPlayerProfileServiceResult> GetProfileAsync(int playerUserId);
+
     Task<UpdatePlayerProfileServiceResult> UpdateProfileAsync(
         int playerUserId,
         string ifMatchHeader,
@@ -12,6 +14,19 @@ public interface IPlayerService
     );
 
     Task<DeletePlayerAccountServiceResult> DeleteAccountAsync(int playerUserId, string? reason);
+}
+
+public enum GetPlayerProfileStatus
+{
+    Success,
+    NotFound
+}
+
+public class GetPlayerProfileServiceResult
+{
+    public GetPlayerProfileStatus Status { get; set; }
+    public GetPlayerProfileResponseDto? Response { get; set; }
+    public string? ETag { get; set; }
 }
 
 public enum UpdatePlayerProfileStatus

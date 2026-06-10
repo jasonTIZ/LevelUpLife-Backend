@@ -16,6 +16,22 @@ public class PlayerService : IPlayerService
         _playerRepository = playerRepository;
     }
 
+    public async Task<GetPlayerProfileServiceResult> GetProfileAsync(int playerUserId)
+    {
+        var player = await _playerRepository.GetActiveByIdWithRelationsAsync(playerUserId);
+        if (player is null)
+        {
+            return new GetPlayerProfileServiceResult { Status = GetPlayerProfileStatus.NotFound };
+        }
+
+        return new GetPlayerProfileServiceResult
+        {
+            Status = GetPlayerProfileStatus.Success,
+            Response = MapToGetProfileResponse(player),
+            ETag = GenerateETag(player)
+        };
+    }
+
     public async Task<UpdatePlayerProfileServiceResult> UpdateProfileAsync(
         int playerUserId,
         string ifMatchHeader,
@@ -142,6 +158,25 @@ public class PlayerService : IPlayerService
                 Success = true,
                 Message = "Cuenta desactivada correctamente",
                 DeactivatedAt = DateTime.UtcNow
+            }
+        };
+    }
+
+    private static GetPlayerProfileResponseDto MapToGetProfileResponse(PlayerUser player)
+    {
+        return new GetPlayerProfileResponseDto
+        {
+            PlayerUserId = player.Id.ToString(),
+            PlayerUserUserName = player.UserName,
+            PlayerUserLevel = player.Level,
+            StatusIsActive = player.IsActive,
+            PlayerUserLastLogin = player.LastLogin,
+            PersonData = new GetPlayerProfilePersonDataDto
+            {
+                Name = player.Person.Name,
+                LastName = player.Person.LastName,
+                Email = player.Person.Email,
+                Birthdate = player.Person.BirthDate
             }
         };
     }

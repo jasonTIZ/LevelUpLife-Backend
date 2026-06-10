@@ -19,6 +19,40 @@ public class PlayerController : ControllerBase
         _playerService = playerService;
     }
 
+    [HttpGet("profile")]
+    public async Task<IActionResult> GetProfile()
+    {
+        var userIdResult = ResolveAuthenticatedUserId();
+        if (userIdResult is null)
+        {
+            return Unauthorized(new
+            {
+                code = 401,
+                message = "Unauthorized",
+                details = "Token inválido o sin identificador de usuario."
+            });
+        }
+
+        var result = await _playerService.GetProfileAsync(userIdResult.Value);
+
+        return result.Status switch
+        {
+            GetPlayerProfileStatus.Success => BuildProfileSuccessResponse(result),
+            GetPlayerProfileStatus.NotFound => NotFound(new
+            {
+                code = 404,
+                message = "Not Found",
+                details = "No se encontró el jugador solicitado."
+            }),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new
+            {
+                code = 500,
+                message = "Internal Server Error",
+                details = "Unexpected error occurred"
+            })
+        };
+    }
+
     [HttpPut("update")]
     public async Task<IActionResult> UpdateProfile([FromBody] UpdatePlayerProfileRequestDto request)
     {
@@ -80,6 +114,16 @@ public class PlayerController : ControllerBase
                 details = "Unexpected error occurred"
             })
         };
+    }
+
+    private IActionResult BuildProfileSuccessResponse(GetPlayerProfileServiceResult result)
+    {
+        if (!string.IsNullOrWhiteSpace(result.ETag))
+        {
+            Response.Headers.ETag = result.ETag;
+        }
+
+        return Ok(result.Response);
     }
 
     private IActionResult BuildSuccessResponse(UpdatePlayerProfileServiceResult result)
