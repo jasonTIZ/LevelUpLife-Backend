@@ -43,6 +43,7 @@ public class CreateStandaloneHabitTaskRequestDto : IValidatableObject
     public TaskEvidence? Evidence { get; set; }
 
     public CreateRepetitionCriteriaRequestDto? RepetitionCriteria { get; set; }
+    public UpdateTimerCriteriaRequestDto? TimerCriteria { get; set; }
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
@@ -59,6 +60,22 @@ public class CreateStandaloneHabitTaskRequestDto : IValidatableObject
             yield return new ValidationResult(
                 "RepetitionCriteria must be omitted unless CompletionCriteria is REPETITIONS.",
                 [nameof(RepetitionCriteria)]
+            );
+        }
+
+        if (CompletionCriteria == TaskCompletionCriteria.TIMER && TimerCriteria is null)
+        {
+            yield return new ValidationResult(
+                "TimerCriteria is required when CompletionCriteria is TIMER.",
+                [nameof(TimerCriteria)]
+            );
+        }
+
+        if (CompletionCriteria != TaskCompletionCriteria.TIMER && TimerCriteria is not null)
+        {
+            yield return new ValidationResult(
+                "TimerCriteria must be omitted unless CompletionCriteria is TIMER.",
+                [nameof(TimerCriteria)]
             );
         }
 

@@ -21,4 +21,5 @@ public class HabitTaskResponseDto
     public TaskCompletionCriteria CompletionCriteria { get; set; }
     public TaskEvidence? Evidence { get; set; }
     public RepetitionCriteriaResponseDto? RepetitionCriteria { get; set; }
+    public TimerCriteriaResponseDto? TimerCriteria { get; set; }
 }
