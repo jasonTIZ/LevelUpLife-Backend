@@ -200,6 +200,40 @@ public class HabitService : IHabitService
         return HabitTaskMapper.ToResponse(task);
     }
 
+    public async Task DeactivateTaskAsync(int taskId, int userId)
+    {
+        var task = await _habitTaskRepository.GetTrackedByIdForUserAsync(taskId, userId);
+        if (task is null || task.Habit is null)
+        {
+            throw new NotFoundError(
+                new ErrorResponse
+                {
+                    Code = 404,
+                    Message = "Task not found",
+                    Details = $"Habit task with id {taskId} was not found for the authenticated user.",
+                }
+            );
+        }
+
+        if (!task.Habit.IsActive)
+        {
+            throw new NotFoundError(
+                new ErrorResponse
+                {
+                    Code = 404,
+                    Message = "Habit not found",
+                    Details = $"Habit with id {task.HabitId} does not exist or is inactive.",
+                }
+            );
+        }
+
+        if (task.IsActive)
+        {
+            task.IsActive = false;
+            await _habitTaskRepository.UpdateAsync(task);
+        }
+    }
+
     public async Task<HabitResponseDto?> GetByIdAsync(int id, int userId)
     {
         var habit = await _habitRepository.GetByIdAsync(id, userId);

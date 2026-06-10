@@ -47,40 +47,6 @@ public class HabitTaskService : IHabitTaskService
         }
     }
 
-    public async Task DeactivateAsync(int taskId, int userId)
-    {
-        try
-        {
-            var task = await _habitTaskRepository.GetTrackedByIdForUserAsync(taskId, userId);
-
-            if (task is null || task.Habit is null)
-            {
-                throw new NotFoundError(new ErrorResponse
-                {
-                    Code = 404,
-                    Message = $"Task with ID {taskId} not found.",
-                    Details = "The requested habit task does not exist in the database."
-                });
-            }
-
-            task.IsActive = false;
-            await _habitTaskRepository.UpdateAsync(task);
-        }
-        catch (NotFoundError)
-        {
-            throw;
-        }
-        catch (Exception ex)
-        {
-            throw new ServerError(500, new ErrorResponse
-            {
-                Code = 500,
-                Message = "An unexpected error occurred while deactivating the habit task.",
-                Details = ex.Message
-            });
-        }
-    }
-
     public async Task<IEnumerable<EvidenceStorageResponseDto>> GetEvidencesByTaskIdAsync(int taskId)
     {
         try

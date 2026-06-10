@@ -180,25 +180,31 @@ public class HabitTaskController : ControllerBase
 
         try
         {
-            await _habitTaskService.DeactivateAsync(id, userId.Value);
+            await _habitService.DeactivateTaskAsync(id, userId.Value);
             return Ok(new { message = "Task deactivated successfully" });
         }
         catch (NotFoundError ex)
         {
-            return NotFound(ex.Payload);
+            return NotFound(
+                new
+                {
+                    code = "TASK_NOT_FOUND",
+                    message = ex.Payload.Message,
+                    details = ex.Payload.Details,
+                }
+            );
         }
-        catch (ServerError ex)
+        catch (Exception)
         {
-            return StatusCode(ex.HttpStatusCode, ex.Payload);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new ErrorResponse
-            {
-                Code = 500,
-                Message = "An unexpected error occurred.",
-                Details = ex.Message
-            });
+            return StatusCode(
+                StatusCodes.Status500InternalServerError,
+                new
+                {
+                    code = "SERVER_ERROR",
+                    message = "Internal server error",
+                    details = "An unexpected error occurred while deactivating the habit task.",
+                }
+            );
         }
     }
 
