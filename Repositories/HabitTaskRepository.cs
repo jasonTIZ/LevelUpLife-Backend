@@ -31,6 +31,11 @@ public class HabitTaskRepository : IHabitTaskRepository
             .FirstOrDefaultAsync(t => t.Id == taskId && t.Habit!.User.Id == userId);
     }
 
+    public async Task UpdateAsync(HabitTask task)
+    {
+        await _context.SaveChangesAsync();
+    }
+
     public async Task UpdateWithRepetitionCriteriaAsync(HabitTask task)
     {
         await using var transaction = await _context.Database.BeginTransactionAsync();
