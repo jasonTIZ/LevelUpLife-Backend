@@ -304,6 +304,9 @@ public class HabitService : IHabitService
                 .Include(h => h.Discipline).ThenInclude(d => d.Category)
                 .Include(h => h.User)
                 .Include(h => h.Tasks)
+                    .ThenInclude(t => t.RepetitionCriteria)
+                .Include(h => h.Tasks)
+                    .ThenInclude(t => t.TimerCriteria)
                 .FirstOrDefaultAsync(h => h.Id == dto.Id);
             return HabitMapper.ToResponse(updatedHabit!);
         }

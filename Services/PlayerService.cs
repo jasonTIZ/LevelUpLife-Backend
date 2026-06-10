@@ -184,7 +184,7 @@ public class PlayerService : IPlayerService
             player.Person.Name,
             player.Person.LastName,
             player.Person.Email,
-            player.Person.BirthDate.ToString("yyyy-MM-dd"),
+            player.Person.BirthDate?.ToString("yyyy-MM-dd") ?? "",
             player.Person.IsActive
         );
 
