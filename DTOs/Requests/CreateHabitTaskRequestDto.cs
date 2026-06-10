@@ -38,6 +38,7 @@ public class CreateHabitTaskRequestDto
 
     public TaskEvidence? Evidence { get; set; }
     public CreateRepetitionCriteriaRequestDto? RepetitionCriteria { get; set; }
+    public CreateTimerCriteriaRequestDto? TimerCriteria { get; set; }
 
     [Range(0, int.MaxValue, ErrorMessage = "El XP no puede ser negativo.")]
     public int? XpValue { get; set; }
@@ -59,6 +60,22 @@ public class CreateHabitTaskRequestDto
             yield return new ValidationResult(
                 "RepetitionCriteria solo debe enviarse cuando el criterio de completado es REPETITIONS.",
                 [nameof(RepetitionCriteria)]
+            );
+        }
+
+        if (CompletionCriteria == TaskCompletionCriteria.TIMER && TimerCriteria is null)
+        {
+            yield return new ValidationResult(
+                "Los criterios de timer son obligatorios cuando el criterio de completado es TIMER.",
+                [nameof(TimerCriteria)]
+            );
+        }
+
+        if (CompletionCriteria != TaskCompletionCriteria.TIMER && TimerCriteria is not null)
+        {
+            yield return new ValidationResult(
+                "TimerCriteria solo debe enviarse cuando el criterio de completado es TIMER.",
+                [nameof(TimerCriteria)]
             );
         }
 

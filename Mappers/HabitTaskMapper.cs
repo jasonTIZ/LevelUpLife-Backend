@@ -80,6 +80,9 @@ public static class HabitTaskMapper
             RepetitionCriteria = task.RepetitionCriteria is null
                 ? null
                 : RepetitionCriteriaMapper.ToResponse(task.RepetitionCriteria),
+            TimerCriteria = task.TimerCriteria is null
+                ? null
+                : TimerCriteriaMapper.ToResponse(task.TimerCriteria),
         };
     }
 }

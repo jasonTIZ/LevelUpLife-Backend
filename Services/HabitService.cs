@@ -14,17 +14,20 @@ public class HabitService : IHabitService
     private readonly IHabitRepository _habitRepository;
     private readonly IHabitTaskRepository _habitTaskRepository;
     private readonly IRepetitionCriteriaRepository _repetitionCriteriaRepository;
+    private readonly ITimerCriteriaRepository _timerCriteriaRepository;
     private readonly AppDbContext _context;
 
     public HabitService(
         IHabitRepository habitRepository,
         IHabitTaskRepository habitTaskRepository,
         IRepetitionCriteriaRepository repetitionCriteriaRepository,
+        ITimerCriteriaRepository timerCriteriaRepository,
         AppDbContext context)
     {
         _habitRepository = habitRepository;
         _habitTaskRepository = habitTaskRepository;
         _repetitionCriteriaRepository = repetitionCriteriaRepository;
+        _timerCriteriaRepository = timerCriteriaRepository;
         _context = context;
     }
 
@@ -48,10 +51,23 @@ public class HabitService : IHabitService
                         RepetitionCriteriaMapper.ToEntity(task.Id, taskDto.RepetitionCriteria!)
                     );
                 }
+
+                TimerCriteria? timerCriteria = null;
+                if (taskDto.CompletionCriteria == TaskCompletionCriteria.TIMER)
+                {
+                    timerCriteria = await _timerCriteriaRepository.AddAsync(
+                        TimerCriteriaMapper.ToEntity(task.Id, taskDto.TimerCriteria!)
+                    );
+                }
+
                 var taskResponse = HabitTaskMapper.ToResponse(task);
                 if (criteria is not null)
                 {
                     taskResponse.RepetitionCriteria = RepetitionCriteriaMapper.ToResponse(criteria);
+                }
+                if (timerCriteria is not null)
+                {
+                    taskResponse.TimerCriteria = TimerCriteriaMapper.ToResponse(timerCriteria);
                 }
                 taskResponses.Add(taskResponse);
             }
@@ -129,6 +145,14 @@ public class HabitService : IHabitService
                 );
             }
 
+            TimerCriteria? timerCriteria = null;
+            if (request.CompletionCriteria == TaskCompletionCriteria.TIMER)
+            {
+                timerCriteria = await _timerCriteriaRepository.AddAsync(
+                    TimerCriteriaMapper.ToEntity(task.Id, request.TimerCriteria!)
+                );
+            }
+
             await transaction.CommitAsync();
 
             var created = await _habitTaskRepository.GetByIdWithCriteriaAsync(task.Id);
@@ -136,6 +160,10 @@ public class HabitService : IHabitService
             if (criteria is not null)
             {
                 response.RepetitionCriteria = RepetitionCriteriaMapper.ToResponse(criteria);
+            }
+            if (timerCriteria is not null)
+            {
+                response.TimerCriteria = TimerCriteriaMapper.ToResponse(timerCriteria);
             }
             return response;
         }

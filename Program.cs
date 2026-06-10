@@ -68,7 +68,6 @@ builder.Services.AddScoped<IHabitTaskService, HabitTaskService>();
 builder.Services.AddScoped<IRepetitionCriteriaRepository, RepetitionCriteriaRepository>();
 builder.Services.AddScoped<IRepetitionCriteriaService, RepetitionCriteriaService>();
 builder.Services.AddScoped<ITimerCriteriaRepository, TimerCriteriaRepository>();
-builder.Services.AddScoped<ITimerCriteriaService, TimerCriteriaService>();
 
 builder.Services.AddScoped<IRewardItemRepository, RewardItemRepository>();
 builder.Services.AddScoped<IRewardItemService, RewardItemService>();

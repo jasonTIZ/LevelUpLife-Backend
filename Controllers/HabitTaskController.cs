@@ -14,18 +14,15 @@ public class HabitTaskController : ControllerBase
     private readonly IHabitService _habitService;
     private readonly IHabitTaskService _habitTaskService;
     private readonly IRepetitionCriteriaService _repetitionCriteriaService;
-    private readonly ITimerCriteriaService _timerCriteriaService;
 
     public HabitTaskController(
         IHabitService habitService,
         IHabitTaskService habitTaskService,
-        IRepetitionCriteriaService repetitionCriteriaService,
-        ITimerCriteriaService timerCriteriaService)
+        IRepetitionCriteriaService repetitionCriteriaService)
     {
         _habitService = habitService;
         _habitTaskService = habitTaskService;
         _repetitionCriteriaService = repetitionCriteriaService;
-        _timerCriteriaService = timerCriteriaService;
     }
 
     [HttpPost]
@@ -126,55 +123,6 @@ public class HabitTaskController : ControllerBase
                 Message = "An unexpected error occurred.",
                 Details = ex.Message
             });
-        }
-    }
-
-    [HttpPost("{taskId:int}/timer-criteria")]
-    public async Task<IActionResult> CreateTimerCriteria(int taskId, [FromBody] CreateTimerCriteriaRequestDto request)
-    {
-        if (!ModelState.IsValid)
-        {
-            return ValidationProblem(ModelState);
-        }
-
-        try
-        {
-            var created = await _timerCriteriaService.CreateAsync(taskId, request);
-            return StatusCode(StatusCodes.Status201Created, created);
-        }
-        catch (ConflictError ex) when (ex.Payload.Message == "CRITERIA_ALREADY_EXISTS")
-        {
-            return Conflict(
-                new
-                {
-                    code = "CRITERIA_ALREADY_EXISTS",
-                    message = "A timer criteria already exists for this task.",
-                    details = ex.Payload.Details,
-                }
-            );
-        }
-        catch (NotFoundError ex)
-        {
-            return NotFound(
-                new
-                {
-                    code = "TASK_NOT_FOUND",
-                    message = ex.Payload.Message,
-                    details = ex.Payload.Details,
-                }
-            );
-        }
-        catch (Exception)
-        {
-            return StatusCode(
-                StatusCodes.Status500InternalServerError,
-                new
-                {
-                    code = "SERVER_ERROR",
-                    message = "Internal server error",
-                    details = "An unexpected error occurred while creating the timer criteria.",
-                }
-            );
         }
     }
 
