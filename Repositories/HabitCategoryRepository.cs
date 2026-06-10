@@ -13,6 +13,13 @@ public class HabitCategoryRepository : IHabitCategoryRepository
         _context = context;
     }
 
+    public async Task<HabitCategory?> GetByIdAsync(int id)
+    {
+        return await _context.HabitCategories
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Id == id);
+    }
+
     public async Task<(
         IEnumerable<HabitCategory> HabitCategories,
         int TotalCount
