@@ -121,7 +121,14 @@ public static class HabitTaskMapper
         {
             Id = task.Id,
             HabitId = task.HabitId,
-            HabitDisciplineId = task.HabitDisciplineId,
+            HabitDiscipline = task.HabitDiscipline is null ? null : new HabitDisciplineDetailResponseDto
+            {
+                IdHabitDiscipline = task.HabitDiscipline.Id,
+                IdHabitCategory = task.HabitDiscipline.Category.Id,
+                DscHabitDisciplineName = task.HabitDiscipline.Name,
+                DscHabitDisciplineDescription = task.HabitDiscipline.Description,
+                StatusHabitDisciplineIsActive = task.HabitDiscipline.IsActive,
+            },
             Title = task.Title,
             Description = task.Description,
             XpValue = task.XpValue,
