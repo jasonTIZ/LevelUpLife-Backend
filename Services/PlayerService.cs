@@ -162,6 +162,9 @@ public class PlayerService : IPlayerService
         };
     }
 
+    private static DateTime? NormalizeLastLogin(DateTime? lastLogin) =>
+        lastLogin is { Year: > 1 } ? lastLogin : null;
+
     private static GetPlayerProfileResponseDto MapToGetProfileResponse(PlayerUser player)
     {
         return new GetPlayerProfileResponseDto
@@ -170,7 +173,7 @@ public class PlayerService : IPlayerService
             PlayerUserUserName = player.UserName,
             PlayerUserLevel = player.Level,
             StatusIsActive = player.IsActive,
-            PlayerUserLastLogin = player.LastLogin,
+            PlayerUserLastLogin = NormalizeLastLogin(player.LastLogin),
             PersonData = new GetPlayerProfilePersonDataDto
             {
                 Name = player.Person.Name,
@@ -189,7 +192,7 @@ public class PlayerService : IPlayerService
             UserName = player.UserName,
             Level = player.Level,
             IsActive = player.IsActive,
-            LastLogin = player.LastLogin,
+            LastLogin = NormalizeLastLogin(player.LastLogin),
             ClassId = player.Class.Id,
             ClassName = player.Class.Name,
             Person = new PersonProfileDto
@@ -212,7 +215,7 @@ public class PlayerService : IPlayerService
             player.UserName,
             player.Level,
             player.IsActive,
-            player.LastLogin?.ToUniversalTime().ToString("O") ?? "",
+            NormalizeLastLogin(player.LastLogin)?.ToUniversalTime().ToString("O") ?? "",
             player.Class.Id,
             player.Class.Name,
             player.Person.Id,
