@@ -5,7 +5,8 @@ namespace LevelUpLifeBackend.Repositories;
 public interface IHabitTaskRepository
 {
     Task<HabitTask> AddAsync(HabitTask task);
-    Task<bool> ExistsActiveByHabitIdAsync(int habitId);
+    Task<HabitTask?> GetTrackedByIdForUserAsync(int taskId, int userId);
+    Task UpdateWithRepetitionCriteriaAsync(HabitTask task);
     Task<HabitTask?> GetByIdWithCriteriaAsync(int id);
     Task<IEnumerable<EvidenceStorage>> GetEvidencesByTaskIdAsync(int taskId);
     Task<EvidenceStorage?> GetEvidenceByIdAsync(int taskId, int id);

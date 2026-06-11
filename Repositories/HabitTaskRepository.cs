@@ -20,9 +20,35 @@ public class HabitTaskRepository : IHabitTaskRepository
         return task;
     }
 
-    public Task<bool> ExistsActiveByHabitIdAsync(int habitId)
+    public Task<HabitTask?> GetTrackedByIdForUserAsync(int taskId, int userId)
     {
-        return _context.HabitTasks.AsNoTracking().AnyAsync(t => t.HabitId == habitId && t.IsActive);
+        return _context.HabitTasks
+            .Include(t => t.Habit!)
+                .ThenInclude(h => h.User)
+            .Include(t => t.Habit!)
+                .ThenInclude(h => h.Discipline)
+            .Include(t => t.RepetitionCriteria)
+            .FirstOrDefaultAsync(t => t.Id == taskId && t.Habit!.User.Id == userId);
+    }
+
+    public async Task UpdateWithRepetitionCriteriaAsync(HabitTask task)
+    {
+        await using var transaction = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            if (task.RepetitionCriteria is not null && task.RepetitionCriteria.Id == 0)
+            {
+                await _context.RepetitionCriteriaRecords.AddAsync(task.RepetitionCriteria);
+            }
+
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
     }
 
     public Task<HabitTask?> GetByIdWithCriteriaAsync(int id)
@@ -31,6 +57,8 @@ public class HabitTaskRepository : IHabitTaskRepository
             .AsNoTracking()
             .Include(t => t.RepetitionCriteria)
             .Include(t => t.TimerCriteria)
+            .Include(t => t.HabitDiscipline)
+                .ThenInclude(d => d!.Category)
             .FirstOrDefaultAsync(t => t.Id == id);
     }
 

@@ -34,7 +34,6 @@ public static class HabitMapper
 
     public static void UpdateEntity(UpdateHabitRequestDto dto, Habit existingHabit)
     {
-        existingHabit.Discipline.Id = dto.DisciplineId;
         existingHabit.Title = dto.Title;
         existingHabit.Description = dto.Description;
     }

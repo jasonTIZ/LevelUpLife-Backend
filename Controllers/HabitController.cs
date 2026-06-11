@@ -178,7 +178,6 @@ public class HabitsController : ControllerBase
 
         try
         {
-            //var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var userIdString = Request.Headers["X-User-Id"].FirstOrDefault();
 
             if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out int userId))

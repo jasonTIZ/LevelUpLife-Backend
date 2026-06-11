@@ -22,7 +22,7 @@ public class PlayerUser{
     this.Level = 0;
     this.ExperiencePoints = 0;
     this.DaysStreak = 0;
-    this.LastLogin = new DateTime();
+    this.LastLogin = null;
     this.CreationDate = new DateTime();
     this.IsActive = true;
   }
