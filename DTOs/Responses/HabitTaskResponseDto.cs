@@ -6,7 +6,7 @@ public class HabitTaskResponseDto
 {
     public int Id { get; set; }
     public int HabitId { get; set; }
-    public int? HabitDisciplineId { get; set; }
+    public HabitDisciplineDetailResponseDto? HabitDiscipline { get; set; }
     public string Title { get; set; } = string.Empty;
     public string? Description { get; set; }
     public int XpValue { get; set; }

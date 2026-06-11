@@ -57,6 +57,8 @@ public class HabitTaskRepository : IHabitTaskRepository
             .AsNoTracking()
             .Include(t => t.RepetitionCriteria)
             .Include(t => t.TimerCriteria)
+            .Include(t => t.HabitDiscipline)
+                .ThenInclude(d => d!.Category)
             .FirstOrDefaultAsync(t => t.Id == id);
     }
 
