@@ -35,5 +35,5 @@ public class GetPlayerProfilePersonDataDto
     public string Email { get; set; } = string.Empty;
 
     [JsonPropertyName("birthdate")]
-    public DateOnly Birthdate { get; set; }
+    public DateOnly? Birthdate { get; set; }
 }
