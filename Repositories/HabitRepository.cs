@@ -31,6 +31,8 @@ public class HabitRepository : IHabitRepository
             .Include(h => h.User)
             .Include(h => h.Tasks)
                 .ThenInclude(t => t.RepetitionCriteria)
+            .Include(h => h.Tasks)
+                .ThenInclude(t => t.TimerCriteria)
             .FirstOrDefaultAsync(h => h.Id == id && h.User.Id == userId);
     }
 

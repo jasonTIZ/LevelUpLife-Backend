@@ -28,6 +28,7 @@ public class HabitTaskRepository : IHabitTaskRepository
             .Include(t => t.Habit!)
                 .ThenInclude(h => h.Discipline)
             .Include(t => t.RepetitionCriteria)
+            .Include(t => t.TimerCriteria)
             .FirstOrDefaultAsync(t => t.Id == taskId && t.Habit!.User.Id == userId);
     }
 
@@ -62,6 +63,13 @@ public class HabitTaskRepository : IHabitTaskRepository
             .FirstOrDefaultAsync(t => t.Id == id);
     }
 
+    public async Task<EvidenceStorage> AddEvidenceAsync(EvidenceStorage evidence)
+    {
+        await _context.EvidenceStorages.AddAsync(evidence);
+        await _context.SaveChangesAsync();
+        return evidence;
+    }
+
     public async Task<IEnumerable<EvidenceStorage>> GetEvidencesByTaskIdAsync(int taskId)
     {
         return await _context.EvidenceStorages
@@ -73,6 +81,12 @@ public class HabitTaskRepository : IHabitTaskRepository
     {
         return await _context.EvidenceStorages
             .FirstOrDefaultAsync(e => e.HabitTaskId == taskId && e.Id == id);
+    }
+
+    public async Task DeleteEvidenceAsync(EvidenceStorage evidence)
+    {
+        _context.EvidenceStorages.Remove(evidence);
+        await _context.SaveChangesAsync();
     }
 
     public async Task<bool> ExistsAsync(int taskId)
