@@ -13,6 +13,13 @@ public class TimerCriteriaRepository : ITimerCriteriaRepository
         _context = context;
     }
 
+    public async Task<TimerCriteria> AddAsync(TimerCriteria criteria)
+    {
+        await _context.TimerCriteriaRecords.AddAsync(criteria);
+        await _context.SaveChangesAsync();
+        return criteria;
+    }
+
     public async Task<TimerCriteria?> GetByTaskIdAsync(int taskId)
     {
         return await _context.TimerCriteriaRecords

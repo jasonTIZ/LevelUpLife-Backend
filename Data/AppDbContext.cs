@@ -219,8 +219,7 @@ public class AppDbContext : DbContext
             entity.Property(e => e.NumSecondsDefined).HasColumnName("NUM_SECONDS_DEFINED");
             entity.Property(e => e.NumSecondsLong).HasColumnName("NUM_SECONDS_LONG");
             entity.Property(e => e.TypePauseIsAllowed).HasColumnName("TYPE_PAUSE_IS_ALLOWED");
-            entity.Property(e => e.StatusTimerCriteriaIsActive)
-                  .HasColumnName("STATUS_TIMER_CRITERIA_IS_ACTIVE");
+            entity.Property(e => e.StatusTimerCriteriaIsActive).HasColumnName("STATUS_TIMER_CRITERIA_IS_ACTIVE");
         });
 
         modelBuilder.Entity<EvidenceStorage>(entity =>
