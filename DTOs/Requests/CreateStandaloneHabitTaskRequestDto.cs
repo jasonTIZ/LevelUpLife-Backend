@@ -43,7 +43,7 @@ public class CreateStandaloneHabitTaskRequestDto : IValidatableObject
     public TaskEvidence? Evidence { get; set; }
 
     public CreateRepetitionCriteriaRequestDto? RepetitionCriteria { get; set; }
-    public UpdateTimerCriteriaRequestDto? TimerCriteria { get; set; }
+    public CreateTimerCriteriaRequestDto? TimerCriteria { get; set; }
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
