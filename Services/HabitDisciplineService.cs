@@ -1,5 +1,7 @@
+using LevelUpLifeBackend.DTOs.Requests;
 using LevelUpLifeBackend.DTOs.Responses;
 using LevelUpLifeBackend.Infrastructure.Errors;
+using LevelUpLifeBackend.Models;
 using LevelUpLifeBackend.Repositories;
 
 namespace LevelUpLifeBackend.Services;
@@ -7,10 +9,14 @@ namespace LevelUpLifeBackend.Services;
 public class HabitDisciplineService : IHabitDisciplineService
 {
     private readonly IHabitDisciplineRepository _habitDisciplineRepository;
+    private readonly IHabitCategoryRepository _habitCategoryRepository;
 
-    public HabitDisciplineService(IHabitDisciplineRepository habitDisciplineRepository)
+    public HabitDisciplineService(
+        IHabitDisciplineRepository habitDisciplineRepository,
+        IHabitCategoryRepository habitCategoryRepository)
     {
         _habitDisciplineRepository = habitDisciplineRepository;
+        _habitCategoryRepository = habitCategoryRepository;
     }
 
     public async Task<HabitDisciplineDetailResponseDto> GetDisciplineByIdAsync(int id)
@@ -52,6 +58,62 @@ public class HabitDisciplineService : IHabitDisciplineService
                 {
                     Code = 500,
                     Message = "An unexpected error occurred while fetching the habit discipline.",
+                    Details = ex.Message,
+                }
+            );
+        }
+    }
+
+    public async Task<HabitDisciplineDetailResponseDto> CreateDisciplineAsync(
+        CreateHabitDisciplineRequestDto request)
+    {
+        try
+        {
+            var category = await _habitCategoryRepository.GetByIdAsync(request.IdHabitCategory);
+            if (category is null)
+            {
+                throw new AppError(
+                    StatusCodes.Status400BadRequest,
+                    new ErrorResponse
+                    {
+                        Code = 400,
+                        Message = "Validation failed.",
+                        Details = "The specified habit category does not exist.",
+                    }
+                );
+            }
+
+            var discipline = new HabitDiscipline
+            {
+                Category = new HabitCategory { Id = request.IdHabitCategory },
+                Name = request.DscHabitDisciplineName.Trim(),
+                Description = request.DscHabitDisciplineDescription?.Trim() ?? string.Empty,
+                IsActive = request.StatusHabitDisciplineIsActive,
+            };
+
+            var created = await _habitDisciplineRepository.AddAsync(discipline);
+
+            return new HabitDisciplineDetailResponseDto
+            {
+                IdHabitDiscipline = created.Id,
+                IdHabitCategory = request.IdHabitCategory,
+                DscHabitDisciplineName = created.Name,
+                DscHabitDisciplineDescription = created.Description,
+                StatusHabitDisciplineIsActive = created.IsActive,
+            };
+        }
+        catch (AppError)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            throw new ServerError(
+                500,
+                new ErrorResponse
+                {
+                    Code = 500,
+                    Message = "An unexpected error occurred while creating the habit discipline.",
                     Details = ex.Message,
                 }
             );
