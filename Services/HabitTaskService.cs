@@ -136,4 +136,47 @@ public class HabitTaskService : IHabitTaskService
             });
         }
     }
+
+    public async Task DeleteEvidenceAsync(int taskId, int id)
+    {
+        try
+        {
+            if (!await _habitTaskRepository.ExistsAsync(taskId))
+            {
+                throw new NotFoundError(new ErrorResponse
+                {
+                    Code = 404,
+                    Message = $"Task with ID {taskId} not found.",
+                    Details = "The requested habit task does not exist in the database."
+                });
+            }
+
+            var evidence = await _habitTaskRepository.GetEvidenceByIdAsync(taskId, id);
+
+            if (evidence == null)
+            {
+                throw new NotFoundError(new ErrorResponse
+                {
+                    Code = 404,
+                    Message = $"Evidence with ID {id} not found for Task {taskId}.",
+                    Details = "The requested evidence record does not exist or does not belong to the specified task."
+                });
+            }
+
+            await _habitTaskRepository.DeleteEvidenceAsync(evidence);
+        }
+        catch (NotFoundError)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            throw new ServerError(500, new ErrorResponse
+            {
+                Code = 500,
+                Message = "An unexpected error occurred while deleting the evidence record.",
+                Details = ex.Message
+            });
+        }
+    }
 }

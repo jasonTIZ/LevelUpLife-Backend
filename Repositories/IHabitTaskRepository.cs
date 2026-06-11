@@ -10,5 +10,6 @@ public interface IHabitTaskRepository
     Task<HabitTask?> GetByIdWithCriteriaAsync(int id);
     Task<IEnumerable<EvidenceStorage>> GetEvidencesByTaskIdAsync(int taskId);
     Task<EvidenceStorage?> GetEvidenceByIdAsync(int taskId, int id);
+    Task DeleteEvidenceAsync(EvidenceStorage evidence);
     Task<bool> ExistsAsync(int taskId);
 }
