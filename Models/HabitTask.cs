@@ -8,7 +8,6 @@ public class HabitTask
     public int? HabitDisciplineId { get; set; }
     public HabitDiscipline? HabitDiscipline { get; set; }
     public RepetitionCriteria? RepetitionCriteria { get; set; }
-    public TimerCriteria? TimerCriteria { get; set; }
 
     public string Title { get; set; } = string.Empty;
     public string? Description { get; set; }
