@@ -61,6 +61,13 @@ public class HabitTaskRepository : IHabitTaskRepository
             .FirstOrDefaultAsync(t => t.Id == id);
     }
 
+    public async Task<EvidenceStorage> AddEvidenceAsync(EvidenceStorage evidence)
+    {
+        await _context.EvidenceStorages.AddAsync(evidence);
+        await _context.SaveChangesAsync();
+        return evidence;
+    }
+
     public async Task<IEnumerable<EvidenceStorage>> GetEvidencesByTaskIdAsync(int taskId)
     {
         return await _context.EvidenceStorages
