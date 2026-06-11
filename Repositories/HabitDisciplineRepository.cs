@@ -13,6 +13,14 @@ public class HabitDisciplineRepository : IHabitDisciplineRepository
         _context = context;
     }
 
+    public async Task<IEnumerable<HabitDiscipline>> GetAllAsync()
+    {
+        return await _context.Disciplines
+            .AsNoTracking()
+            .Include(d => d.Category)
+            .ToListAsync();
+    }
+
     public async Task<HabitDiscipline?> GetByIdAsync(int id)
     {
         return await _context.Disciplines
