@@ -20,4 +20,12 @@ public class HabitDisciplineRepository : IHabitDisciplineRepository
             .Include(d => d.Category)
             .FirstOrDefaultAsync(d => d.Id == id);
     }
+
+    public async Task<HabitDiscipline> AddAsync(HabitDiscipline discipline)
+    {
+        _context.Entry(discipline.Category).State = EntityState.Unchanged;
+        await _context.Disciplines.AddAsync(discipline);
+        await _context.SaveChangesAsync();
+        return discipline;
+    }
 }
