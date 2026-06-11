@@ -20,6 +20,7 @@ public class AppDbContext : DbContext
     public DbSet<Habit> Habits { get; set; }
     public DbSet<HabitTask> HabitTasks { get; set; }
     public DbSet<RepetitionCriteria> RepetitionCriteriaRecords { get; set; }
+    public DbSet<TimerCriteria> TimerCriteriaRecords { get; set; }
     public DbSet<EvidenceStorage> EvidenceStorages { get; set; }
 
     public DbSet<RewardItemType> RewardItemTypes { get; set; }
@@ -201,6 +202,25 @@ public class AppDbContext : DbContext
             entity.Property(e => e.StatusIsPartialAllowed).HasColumnName("STATUS_IS_PARTIAL_ALLOWED");
             entity.Property(e => e.StatusRepetitionsCriteriaIsActive)
                   .HasColumnName("STATUS_REPETITIONS_CRITERIA_IS_ACTIVE");
+        });
+
+        modelBuilder.Entity<TimerCriteria>(entity =>
+        {
+            entity.ToTable("LULT_HABIT_TASK_TIMER_CRITERIA");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("ID_HABIT_TASK_TIMER_CRITERIA");
+
+            entity.Property(e => e.HabitTaskId).HasColumnName("ID_HABIT_TASK");
+            entity.HasOne(e => e.HabitTask)
+                  .WithOne(ht => ht.TimerCriteria)
+                  .HasForeignKey<TimerCriteria>(e => e.HabitTaskId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.Property(e => e.NumSecondsDefined).HasColumnName("NUM_SECONDS_DEFINED");
+            entity.Property(e => e.NumSecondsLong).HasColumnName("NUM_SECONDS_LONG");
+            entity.Property(e => e.TypePauseIsAllowed).HasColumnName("TYPE_PAUSE_IS_ALLOWED");
+            entity.Property(e => e.StatusTimerCriteriaIsActive)
+                  .HasColumnName("STATUS_TIMER_CRITERIA_IS_ACTIVE");
         });
 
         modelBuilder.Entity<EvidenceStorage>(entity =>
