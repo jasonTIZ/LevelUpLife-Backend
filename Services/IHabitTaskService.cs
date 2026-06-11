@@ -7,4 +7,5 @@ public interface IHabitTaskService
     Task<HabitTaskResponseDto> GetByIdAsync(int taskId);
     Task<IEnumerable<EvidenceStorageResponseDto>> GetEvidencesByTaskIdAsync(int taskId);
     Task<EvidenceStorageResponseDto> GetEvidenceByIdAsync(int taskId, int id);
+    Task DeleteEvidenceAsync(int taskId, int id);
 }

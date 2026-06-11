@@ -76,6 +76,12 @@ public class HabitTaskRepository : IHabitTaskRepository
             .FirstOrDefaultAsync(e => e.HabitTaskId == taskId && e.Id == id);
     }
 
+    public async Task DeleteEvidenceAsync(EvidenceStorage evidence)
+    {
+        _context.EvidenceStorages.Remove(evidence);
+        await _context.SaveChangesAsync();
+    }
+
     public async Task<bool> ExistsAsync(int taskId)
     {
         return await _context.HabitTasks.AnyAsync(ht => ht.Id == taskId);
