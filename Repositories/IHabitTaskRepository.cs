@@ -8,7 +8,9 @@ public interface IHabitTaskRepository
     Task<HabitTask?> GetTrackedByIdForUserAsync(int taskId, int userId);
     Task UpdateWithRepetitionCriteriaAsync(HabitTask task);
     Task<HabitTask?> GetByIdWithCriteriaAsync(int id);
+    Task<EvidenceStorage> AddEvidenceAsync(EvidenceStorage evidence);
     Task<IEnumerable<EvidenceStorage>> GetEvidencesByTaskIdAsync(int taskId);
     Task<EvidenceStorage?> GetEvidenceByIdAsync(int taskId, int id);
+    Task DeleteEvidenceAsync(EvidenceStorage evidence);
     Task<bool> ExistsAsync(int taskId);
 }
