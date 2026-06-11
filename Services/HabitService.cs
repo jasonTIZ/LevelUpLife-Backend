@@ -223,6 +223,13 @@ public class HabitService : IHabitService
             }
         }
 
+        if (request.CompletionCriteria == TaskCompletionCriteria.TIMER
+            && request.TimerCriteria is not null
+            && task.TimerCriteria is not null)
+        {
+            TimerCriteriaMapper.UpdateEntity(task.TimerCriteria, request.TimerCriteria);
+        }
+
         await _habitTaskRepository.UpdateWithRepetitionCriteriaAsync(task);
 
         return HabitTaskMapper.ToResponse(task);
@@ -275,6 +282,8 @@ public class HabitService : IHabitService
             .Include(h => h.User)
             .Include(h => h.Tasks)
                 .ThenInclude(t => t.RepetitionCriteria)
+            .Include(h => h.Tasks)
+                .ThenInclude(t => t.TimerCriteria)
             .FirstOrDefaultAsync(h => h.Id == dto.Id);
         if (existingHabit is null) return null;
 
@@ -304,6 +313,11 @@ public class HabitService : IHabitService
                             RepetitionCriteriaMapper.UpdateEntity(criteria, taskDto.RepetitionCriteria);
                         }
                     }
+
+                    if (taskDto.TimerCriteria is not null && task.TimerCriteria is not null)
+                    {
+                        TimerCriteriaMapper.UpdateEntity(task.TimerCriteria, taskDto.TimerCriteria);
+                    }
                 }
             }
 
@@ -318,6 +332,9 @@ public class HabitService : IHabitService
                 .Include(h => h.Discipline).ThenInclude(d => d.Category)
                 .Include(h => h.User)
                 .Include(h => h.Tasks)
+                    .ThenInclude(t => t.RepetitionCriteria)
+                .Include(h => h.Tasks)
+                    .ThenInclude(t => t.TimerCriteria)
                 .FirstOrDefaultAsync(h => h.Id == dto.Id);
             return HabitMapper.ToResponse(updatedHabit!);
         }
