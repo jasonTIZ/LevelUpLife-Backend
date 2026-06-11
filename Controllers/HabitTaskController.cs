@@ -192,6 +192,38 @@ public class HabitTaskController : ControllerBase
         }
     }
 
+    [HttpPost("{taskId:int}/evidences")]
+    public async Task<IActionResult> CreateEvidence(int taskId, [FromBody] CreateEvidenceRequestDto request)
+    {
+        if (!ModelState.IsValid)
+        {
+            return ValidationProblem(ModelState);
+        }
+
+        try
+        {
+            var created = await _habitTaskService.CreateEvidenceAsync(taskId, request);
+            return StatusCode(StatusCodes.Status201Created, created);
+        }
+        catch (NotFoundError ex)
+        {
+            return NotFound(ex.Payload);
+        }
+        catch (ServerError ex)
+        {
+            return StatusCode(ex.HttpStatusCode, ex.Payload);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new ErrorResponse
+            {
+                Code = 500,
+                Message = "An unexpected error occurred.",
+                Details = ex.Message
+            });
+        }
+    }
+
     [HttpGet("{taskId:int}/evidences")]
     public async Task<IActionResult> GetEvidences(int taskId)
     {
@@ -280,6 +312,33 @@ public class HabitTaskController : ControllerBase
         {
             var evidence = await _habitTaskService.GetEvidenceByIdAsync(taskId, id);
             return Ok(evidence);
+        }
+        catch (NotFoundError ex)
+        {
+            return NotFound(ex.Payload);
+        }
+        catch (ServerError ex)
+        {
+            return StatusCode(ex.HttpStatusCode, ex.Payload);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new ErrorResponse
+            {
+                Code = 500,
+                Message = "An unexpected error occurred.",
+                Details = ex.Message
+            });
+        }
+    }
+
+    [HttpDelete("{taskId:int}/evidences/{id:int}")]
+    public async Task<IActionResult> DeleteEvidence(int taskId, int id)
+    {
+        try
+        {
+            await _habitTaskService.DeleteEvidenceAsync(taskId, id);
+            return Ok(new { message = "Evidence deleted successfully." });
         }
         catch (NotFoundError ex)
         {
