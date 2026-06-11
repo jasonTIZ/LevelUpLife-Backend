@@ -3,6 +3,7 @@ using System.Security.Claims;
 using LevelUpLifeBackend.DTOs.Requests;
 using LevelUpLifeBackend.Infrastructure.Errors;
 using LevelUpLifeBackend.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LevelUpLifeBackend.Controllers;
@@ -251,6 +252,7 @@ public class HabitTaskController : ControllerBase
         }
     }
 
+    [Authorize]
     [HttpDelete("{taskId:int}/timer-criteria/{id:int}")]
     public async Task<IActionResult> DeactivateTimerCriteria(int taskId, int id)
     {
