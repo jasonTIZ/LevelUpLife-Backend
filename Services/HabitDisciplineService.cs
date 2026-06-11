@@ -119,4 +119,76 @@ public class HabitDisciplineService : IHabitDisciplineService
             );
         }
     }
+
+    public async Task<HabitDisciplineDetailResponseDto> UpdateDisciplineAsync(
+        int id,
+        UpdateHabitDisciplineRequestDto request)
+    {
+        try
+        {
+            var discipline = await _habitDisciplineRepository.GetByIdForUpdateAsync(id);
+            if (discipline is null)
+            {
+                throw new NotFoundError(
+                    new ErrorResponse
+                    {
+                        Code = 404,
+                        Message = $"Discipline with ID {id} not found.",
+                        Details = "The requested habit discipline does not exist in the database.",
+                    }
+                );
+            }
+
+            var category = await _habitCategoryRepository.GetByIdAsync(request.IdHabitCategory);
+            if (category is null)
+            {
+                throw new AppError(
+                    StatusCodes.Status400BadRequest,
+                    new ErrorResponse
+                    {
+                        Code = 400,
+                        Message = "Validation failed.",
+                        Details = "The specified habit category does not exist.",
+                    }
+                );
+            }
+
+            discipline.Name = request.DscHabitDisciplineName.Trim();
+            discipline.Description = request.DscHabitDisciplineDescription?.Trim() ?? string.Empty;
+            discipline.IsActive = request.StatusHabitDisciplineIsActive;
+
+            var updated = await _habitDisciplineRepository.UpdateAsync(
+                discipline,
+                request.IdHabitCategory);
+
+            return new HabitDisciplineDetailResponseDto
+            {
+                IdHabitDiscipline = updated.Id,
+                IdHabitCategory = request.IdHabitCategory,
+                DscHabitDisciplineName = updated.Name,
+                DscHabitDisciplineDescription = updated.Description,
+                StatusHabitDisciplineIsActive = updated.IsActive,
+            };
+        }
+        catch (NotFoundError)
+        {
+            throw;
+        }
+        catch (AppError)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            throw new ServerError(
+                500,
+                new ErrorResponse
+                {
+                    Code = 500,
+                    Message = "An unexpected error occurred while updating the habit discipline.",
+                    Details = ex.Message,
+                }
+            );
+        }
+    }
 }

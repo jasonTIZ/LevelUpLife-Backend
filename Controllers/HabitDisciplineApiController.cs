@@ -49,6 +49,48 @@ public class HabitDisciplineApiController : ControllerBase
     }
 
     [Authorize]
+    [HttpPut("{id:int}")]
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateHabitDisciplineRequestDto request)
+    {
+        if (!ModelState.IsValid)
+        {
+            return ValidationProblem(ModelState);
+        }
+
+        try
+        {
+            var updated = await _habitDisciplineService.UpdateDisciplineAsync(id, request);
+            return Ok(updated);
+        }
+        catch (NotFoundError ex)
+        {
+            return NotFound(ex.Payload);
+        }
+        catch (AppError ex) when (ex.HttpStatusCode == StatusCodes.Status400BadRequest)
+        {
+            var modelState = new ModelStateDictionary();
+            modelState.AddModelError("idHabitCategory", ex.Payload.Details ?? ex.Payload.Message);
+            return ValidationProblem(modelState);
+        }
+        catch (ServerError ex)
+        {
+            return StatusCode(ex.HttpStatusCode, ex.Payload);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(
+                500,
+                new ErrorResponse
+                {
+                    Code = 500,
+                    Message = "An unexpected error occurred.",
+                    Details = ex.Message,
+                }
+            );
+        }
+    }
+
+    [Authorize]
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateHabitDisciplineRequestDto request)
     {
