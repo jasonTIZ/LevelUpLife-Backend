@@ -19,6 +19,27 @@ public class HabitDisciplineService : IHabitDisciplineService
         _habitCategoryRepository = habitCategoryRepository;
     }
 
+    public async Task<IEnumerable<HabitDisciplineDetailResponseDto>> GetAllDisciplinesAsync()
+    {
+        try
+        {
+            var disciplines = await _habitDisciplineRepository.GetAllAsync();
+            return disciplines.Select(d => MapToDto(d));
+        }
+        catch (Exception ex)
+        {
+            throw new ServerError(
+                500,
+                new ErrorResponse
+                {
+                    Code = 500,
+                    Message = "An unexpected error occurred while fetching habit disciplines.",
+                    Details = ex.Message,
+                }
+            );
+        }
+    }
+
     public async Task<HabitDisciplineDetailResponseDto> GetDisciplineByIdAsync(int id)
     {
         try
@@ -37,14 +58,7 @@ public class HabitDisciplineService : IHabitDisciplineService
                 );
             }
 
-            return new HabitDisciplineDetailResponseDto
-            {
-                IdHabitDiscipline = discipline.Id,
-                IdHabitCategory = discipline.Category.Id,
-                DscHabitDisciplineName = discipline.Name,
-                DscHabitDisciplineDescription = discipline.Description,
-                StatusHabitDisciplineIsActive = discipline.IsActive,
-            };
+            return MapToDto(discipline);
         }
         catch (NotFoundError)
         {
@@ -93,14 +107,7 @@ public class HabitDisciplineService : IHabitDisciplineService
 
             var created = await _habitDisciplineRepository.AddAsync(discipline);
 
-            return new HabitDisciplineDetailResponseDto
-            {
-                IdHabitDiscipline = created.Id,
-                IdHabitCategory = request.IdHabitCategory,
-                DscHabitDisciplineName = created.Name,
-                DscHabitDisciplineDescription = created.Description,
-                StatusHabitDisciplineIsActive = created.IsActive,
-            };
+            return MapToDto(created, request.IdHabitCategory);
         }
         catch (AppError)
         {
@@ -118,5 +125,19 @@ public class HabitDisciplineService : IHabitDisciplineService
                 }
             );
         }
+    }
+
+    private static HabitDisciplineDetailResponseDto MapToDto(
+        HabitDiscipline discipline,
+        int? categoryId = null)
+    {
+        return new HabitDisciplineDetailResponseDto
+        {
+            IdHabitDiscipline = discipline.Id,
+            IdHabitCategory = categoryId ?? discipline.Category.Id,
+            DscHabitDisciplineName = discipline.Name,
+            DscHabitDisciplineDescription = discipline.Description,
+            StatusHabitDisciplineIsActive = discipline.IsActive,
+        };
     }
 }
