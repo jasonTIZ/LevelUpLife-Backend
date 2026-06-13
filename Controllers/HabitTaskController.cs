@@ -162,7 +162,7 @@ public class HabitTaskController : ControllerBase
         }
     }
 
-    [HttpDelete("{id:int}")]
+    [HttpDelete("{id:int:min(1)}")]
     public async Task<IActionResult> Deactivate(int id)
     {
         var userId = ResolveUserId();
