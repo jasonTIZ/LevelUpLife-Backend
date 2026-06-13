@@ -6,6 +6,7 @@ public interface IHabitTaskRepository
 {
     Task<HabitTask> AddAsync(HabitTask task);
     Task<HabitTask?> GetTrackedByIdForUserAsync(int taskId, int userId);
+    Task UpdateAsync(HabitTask task);
     Task UpdateWithRepetitionCriteriaAsync(HabitTask task);
     Task<HabitTask?> GetByIdWithCriteriaAsync(int id);
     Task<EvidenceStorage> AddEvidenceAsync(EvidenceStorage evidence);

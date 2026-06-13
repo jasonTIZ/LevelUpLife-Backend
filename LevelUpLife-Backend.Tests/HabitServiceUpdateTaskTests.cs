@@ -145,4 +145,68 @@ public class HabitServiceUpdateTaskTests
         );
         Assert.Equal(400, ex.HttpStatusCode);
     }
+
+    [Fact]
+    public async Task DeactivateTaskAsync_WhenTaskExists_SetsIsActiveToFalse()
+    {
+        await using var context = CreateInMemoryContext();
+        var task = SampleTask();
+        var taskRepo = new Mock<IHabitTaskRepository>();
+
+        taskRepo.Setup(r => r.GetTrackedByIdForUserAsync(1, 2)).ReturnsAsync(task);
+        taskRepo.Setup(r => r.UpdateAsync(task)).Returns(Task.CompletedTask);
+
+        var service = CreateService(context, taskRepo);
+        await service.DeactivateTaskAsync(1, userId: 2);
+
+        Assert.False(task.IsActive);
+        taskRepo.Verify(r => r.UpdateAsync(task), Times.Once);
+    }
+
+    [Fact]
+    public async Task DeactivateTaskAsync_WhenTaskAlreadyInactive_SkipsRepositoryUpdate()
+    {
+        await using var context = CreateInMemoryContext();
+        var task = SampleTask();
+        task.IsActive = false;
+        var taskRepo = new Mock<IHabitTaskRepository>();
+
+        taskRepo.Setup(r => r.GetTrackedByIdForUserAsync(1, 2)).ReturnsAsync(task);
+
+        var service = CreateService(context, taskRepo);
+        await service.DeactivateTaskAsync(1, userId: 2);
+
+        Assert.False(task.IsActive);
+        taskRepo.Verify(r => r.UpdateAsync(It.IsAny<HabitTask>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task DeactivateTaskAsync_WhenTaskNotFound_ThrowsNotFoundError()
+    {
+        await using var context = CreateInMemoryContext();
+        var taskRepo = new Mock<IHabitTaskRepository>();
+        taskRepo.Setup(r => r.GetTrackedByIdForUserAsync(99, 2)).ReturnsAsync((HabitTask?)null);
+
+        var service = CreateService(context, taskRepo);
+
+        await Assert.ThrowsAsync<NotFoundError>(() =>
+            service.DeactivateTaskAsync(99, userId: 2)
+        );
+    }
+
+    [Fact]
+    public async Task DeactivateTaskAsync_WhenHabitIsInactive_ThrowsNotFoundError()
+    {
+        await using var context = CreateInMemoryContext();
+        var task = SampleTask();
+        task.Habit!.IsActive = false;
+        var taskRepo = new Mock<IHabitTaskRepository>();
+        taskRepo.Setup(r => r.GetTrackedByIdForUserAsync(1, 2)).ReturnsAsync(task);
+
+        var service = CreateService(context, taskRepo);
+
+        await Assert.ThrowsAsync<NotFoundError>(() =>
+            service.DeactivateTaskAsync(1, userId: 2)
+        );
+    }
 }

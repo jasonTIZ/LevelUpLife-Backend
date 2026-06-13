@@ -162,6 +162,52 @@ public class HabitTaskController : ControllerBase
         }
     }
 
+    [HttpDelete("{id:int:min(1)}")]
+    public async Task<IActionResult> Deactivate(int id)
+    {
+        var userId = ResolveUserId();
+        if (userId is null)
+        {
+            return Unauthorized(
+                new
+                {
+                    code = "UNAUTHORIZED",
+                    message = "Unauthorized access",
+                    details = "A valid JWT or X-User-Id header is required.",
+                }
+            );
+        }
+
+        try
+        {
+            await _habitService.DeactivateTaskAsync(id, userId.Value);
+            return Ok(new { message = "Task deactivated successfully" });
+        }
+        catch (NotFoundError ex)
+        {
+            return NotFound(
+                new
+                {
+                    code = "TASK_NOT_FOUND",
+                    message = ex.Payload.Message,
+                    details = ex.Payload.Details,
+                }
+            );
+        }
+        catch (Exception)
+        {
+            return StatusCode(
+                StatusCodes.Status500InternalServerError,
+                new
+                {
+                    code = "SERVER_ERROR",
+                    message = "Internal server error",
+                    details = "An unexpected error occurred while deactivating the habit task.",
+                }
+            );
+        }
+    }
+
     [HttpGet("{taskId:int}")]
     public async Task<IActionResult> GetById(int taskId)
     {

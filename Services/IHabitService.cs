@@ -12,6 +12,7 @@ public interface IHabitService
         CreateStandaloneHabitTaskRequestDto request,
         int userId
     );
+    Task DeactivateTaskAsync(int taskId, int userId);
     Task<HabitResponseDto?> GetByIdAsync(int id, int userId);
     Task<PagedResultDto<HabitResponseDto>> GetActiveHabitsPaginatedAsync(
         int pageNumber,
