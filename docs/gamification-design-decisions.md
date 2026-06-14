@@ -32,7 +32,7 @@ Comportamientos #29 que siguen vigentes:
 - `completedAt` anterior a `startDate` de la tarea → **400**.
 - Validaciones EVIDENCE / REPETITIONS / TIMER activos antes de completar.
 
-### 1.2 Qué se agregó en esta iteración (Bloques A–E)
+### 1.2 Qué se agregó en esta iteración (Bloques A, B, E)
 
 | Bloque | Entregable |
 |--------|------------|
@@ -65,11 +65,11 @@ Funcionalidad existente que permanece igual en contrato y comportamiento habitua
 | Área | Detalle |
 |------|---------|
 | **Autenticación** | Login, JWT, flujo sin cambios |
-| **Perfil de jugador** | `GET/PUT/PATCH` en `PlayerController` (excepto nuevo `GET events`) |
+| **Perfil de jugador** | `GET/PUT/PATCH` en `PlayerController` — **sin cambios** (no hay `GET events` en esta rama) |
 | **Hábitos** | CRUD de hábitos sin cambios |
 | **Tareas — crear / editar / desactivar** | `POST`, `PUT`, `DELETE` de habit-tasks; mismos códigos y payloads |
 | **Criterios y evidencias** | Repetition, timer, evidences — sin cambios |
-| **Listar recompensas** | `GET` reward items; mismo endpoint (ver nota aditiva abajo) |
+| **Listar recompensas** | `GET /api/RewardItem` — **sin cambios** respecto a `dev` (solo listado; sin claim) |
 | **Contrato de complete** | Mismo path, body, forma de respuesta `{ xpEarned, newLevel, streakUpdated }`, mismos códigos 400/404/500 |
 
 **Flujo #29 que debe seguir pasando igual:**
@@ -108,20 +108,19 @@ Estos elementos **no existían** antes; no sustituyen endpoints ni flujos anteri
 | Entregable | Notas |
 |------------|-------|
 | `POST /api/streaks/protection` | Endpoint y servicio nuevos |
-| `POST /api/rewards/{id}/claim` | No había reclamo de recompensas |
-| `GET /api/player/events` | No había consulta de eventos |
-| Tablas `LULH_PLAYER_EVENT`, `LULT_REWARD_CLAIM` | Nuevas |
-| Columnas en streak / task / reward | Aditivas; valores por defecto compatibles con filas existentes |
+| Tabla `LULH_PLAYER_EVENT` | Eventos **internos** (`LEVEL_UP`, racha) — escritura desde servicios; **sin GET público** |
+| Columnas en streak / task | Aditivas; valores por defecto compatibles con filas existentes |
+
+**Fuera de esta rama (otro compañero):** `POST /api/rewards/{id}/claim`, `LULT_REWARD_CLAIM`, inventario, seed de catálogo, `GET /api/player/events`.
 
 ---
 
-#### Cambios aditivos en respuestas existentes (compatibles hacia atrás)
+#### Cambios aditivos en respuestas existentes
 
-| Endpoint / modelo | Cambio | ¿Rompe clientes? |
-|-------------------|--------|-------------------|
-| `GET` reward items | Campo nuevo `requiredExperiencePoints` en JSON | **No**, si el cliente ignora campos desconocidos |
-| `LULM_REWARD_ITEM` | Columna `NUM_REWARD_ITEM_REQUIRED_XP` | Solo afecta a quien use claim (endpoint nuevo) |
-| `CostGold` | Sin cambio de significado; reservado para tienda en oro | **No** modifica lógica existente (claim no existía) |
+| Endpoint / modelo | Cambio en esta rama |
+|-------------------|---------------------|
+| `GET /api/RewardItem` | **Ninguno** — mismo contrato que `dev` |
+| `LULM_REWARD_ITEM` | **Sin columnas nuevas** en esta rama |
 
 ---
 
@@ -132,7 +131,7 @@ Estos elementos **no existían** antes; no sustituyen endpoints ni flujos anteri
 | Migraciones EF | SQL idempotente (`IF NOT EXISTS`); no borra datos existentes |
 | Filas legacy en `LULH_STREAK_LOG` | `STATUS_STREAK_COMPLETION_RECORDED` default `true` → se tratan como completions históricas |
 | Backup SQL + EF | Puede requerir baseline en `__EFMigrationsHistory` (ver sección 4 del doc) |
-| Soft delete | Sin borrado físico de historial de tareas, logs ni reclamos |
+| Soft delete | Sin borrado físico de historial de tareas ni logs de racha |
 
 ---
 
@@ -144,7 +143,7 @@ Estos elementos **no existían** antes; no sustituyen endpoints ni flujos anteri
 | **P1** | Hueco &gt; 1 día sin protección → racha 1 | Comportamiento nuevo documentado |
 | **P1** | Protección + complete tras ausencia | Racha continúa |
 | **P2** | PUT tarea completada | `isCompleted` y snapshot intactos |
-| **P2** | Claim recompensa | Endpoint nuevo; no afecta complete ni CRUD de tareas |
+| **P2** | Verificar `LEVEL_UP` en BD | Fila en `LULH_PLAYER_EVENT` tras subir de nivel |
 
 ---
 
@@ -171,7 +170,7 @@ Auth: JWT o X-User-Id (mismo patrón que el resto de habit-tasks)
 - Al completar: `NUM_HABIT_TASK_EARNED_XP` = XP calculado en ese momento (`XpValue` o fallback EASY=10, MEDIUM=25, HARD=50).
 - Editar la tarea después **no** cambia el XP ya otorgado.
 
-**Eventos generados (consultables, no push):**
+**Eventos generados (persistidos en BD, sin GET público en esta rama):**
 
 - `STREAK_RESET` — reinicio por hueco sin protección.
 - `STREAK_CONTINUED` — racha salvada por protección en hueco > 1 día.
@@ -217,69 +216,35 @@ Auth: Bearer JWT únicamente (userId desde claims, no body/header arbitrario)
 
 ---
 
-### 2.3 Nuevo — Reclamar recompensa (Bloque D)
+### 2.3 Bloque D — Recompensas (fuera de alcance)
 
-```
-POST /api/rewards/{id}/claim
-Auth: Bearer JWT únicamente
-```
+**No incluido en esta rama.** Lo implementará otro compañero del equipo.
 
-**200 OK:**
+Diseño de referencia futuro (no desplegado aquí):
 
-```json
-{
-  "success": true,
-  "message": "Reward claimed successfully.",
-  "rewardItemId": 1,
-  "rewardItemName": "Poción Protectora de Racha",
-  "inventoryQuantity": 1
-}
-```
+- `POST /api/rewards/{id}/claim` por `RequiredExperiencePoints`
+- Tablas `LULT_REWARD_CLAIM`, `LULT_PLAYER_INVENTORY`
+- `GET /api/player/events` para consulta de eventos
 
-**Errores:**
-
-| HTTP | Cuándo |
-|------|--------|
-| 401 | Token inválido |
-| 403 | `ExperiencePoints < RequiredExperiencePoints` |
-| 400 | Recompensa ya reclamada (idempotencia) |
-| 404 | Ítem o jugador no encontrado |
-
-**Reglas:**
-
-- Desbloqueo: `ExperiencePoints >= RequiredExperiencePoints` (`NUM_REWARD_ITEM_REQUIRED_XP`). **0** = sin requisito.
-- `CostGold` (**no** usado en claim) queda reservado para precio en oro de la tienda (Economía, futuro).
-- Idempotencia: `LULT_REWARD_CLAIM` con índice único `(player, reward)` donde `IsActive = true`. Segundo claim → 400, sin duplicar inventario.
-- Inventario: `LULT_PLAYER_INVENTORY` incrementa cantidad o crea fila nueva.
-- **Evento:** `REWARD_CLAIMED`.
+El listado existente `GET /api/RewardItem` de `dev` **no cambia**.
 
 ---
 
-### 2.4 Nuevo — Eventos del jugador (preparación notificaciones)
+### 2.4 Eventos internos del jugador (sin endpoint GET)
 
+Los eventos se **escriben** en `LULH_PLAYER_EVENT` desde `HabitService` y `StreakService`. **No hay** `GET /api/player/events` en esta PR.
+
+Tipos persistidos: `STREAK_RESET`, `STREAK_CONTINUED`, `STREAK_PROTECTION_USED`, `LEVEL_UP`.
+
+Verificación QA (SQL):
+
+```sql
+SELECT "TYPE_PLAYER_EVENT", "DSC_PLAYER_EVENT_PAYLOAD", "FEC_PLAYER_EVENT_CREATED"
+FROM "LULH_PLAYER_EVENT"
+WHERE "ID_PLAYER_USER" = <userId>
+ORDER BY "FEC_PLAYER_EVENT_CREATED" DESC
+LIMIT 10;
 ```
-GET /api/player/events?limit=50
-Auth: Bearer JWT ([Authorize] en PlayerController)
-```
-
-**200 OK:**
-
-```json
-{
-  "success": true,
-  "message": "Player events retrieved successfully.",
-  "data": [
-    {
-      "id": 1,
-      "eventType": "LEVEL_UP",
-      "payloadJson": "{\"previousLevel\":1,\"newLevel\":2}",
-      "createdAt": "2026-06-13T..."
-    }
-  ]
-}
-```
-
-Tipos: `STREAK_RESET`, `STREAK_CONTINUED`, `STREAK_PROTECTION_USED`, `REWARD_CLAIMED`, `LEVEL_UP`.
 
 ---
 
@@ -321,16 +286,14 @@ Tipos: `STREAK_RESET`, `STREAK_CONTINUED`, `STREAK_PROTECTION_USED`, `REWARD_CLA
 
 ### Bloque D — Recompensas e inventario
 
-| Campo | Uso |
-|-------|-----|
-| `NUM_REWARD_ITEM_COST_GOLD` | Precio en **oro** (tienda virtual, futuro). **No** valida claim. |
-| `NUM_REWARD_ITEM_REQUIRED_XP` | Umbral de **XP acumulado** para desbloquear/reclamar. 0 = libre. |
+**Fuera de alcance en esta rama.** Referencia para el compañero que implemente claim:
 
-**Migración seed:** ítems existentes del backup recibieron `RequiredExperiencePoints = CostGold` como punto de partida (CostGold se usaba por error como umbral en una versión intermedia; corregido en revisión de seguimiento).
+| Campo | Uso previsto |
+|-------|--------------|
+| `NUM_REWARD_ITEM_COST_GOLD` | Precio en oro (tienda futura) |
+| `NUM_REWARD_ITEM_REQUIRED_XP` | Umbral XP para desbloquear/reclamar |
 
-**Pausa de racha:** el umbral usa XP actual; no se revocan recompensas ya reclamadas por una pausa justificada.
-
-**Tests:** `RewardItemServiceTests` — validación usa `RequiredExperiencePoints`, ignora `CostGold` para unlock, requisito 0.
+No hay migración seed ni `RewardItemServiceTests` en esta PR.
 
 ---
 
@@ -352,10 +315,7 @@ Tipos: `STREAK_RESET`, `STREAK_CONTINUED`, `STREAK_PROTECTION_USED`, `REWARD_CLA
 |--------|--------|
 | `LULH_STREAK_LOG` | + `DSC_STREAK_PROTECTION_TYPE`, + `STATUS_STREAK_COMPLETION_RECORDED` (default `true` en filas legacy) |
 | `LULM_HABIT_TASK` | + `NUM_HABIT_TASK_EARNED_XP` (snapshot al completar) |
-| `LULH_PLAYER_EVENT` | Nueva — eventos consultables por jugador |
-| `LULT_REWARD_CLAIM` | Nueva — idempotencia de reclamos |
-| `LULM_REWARD_ITEM` | + `NUM_REWARD_ITEM_REQUIRED_XP` |
-| `LULT_PLAYER_INVENTORY` | Mapeada en EF (ya existía en backup SQL) |
+| `LULH_PLAYER_EVENT` | Nueva — eventos internos (`LEVEL_UP`, racha) |
 
 ### Migraciones EF
 
@@ -379,19 +339,11 @@ docker exec -i leveluplife-postgres psql -U levelup -d leveluplife \
 docker exec -i leveluplife-postgres psql -U levelup -d leveluplife \
   < Scripts/baseline-ef-after-backup.sql
 
-# Aplica gamificación + seed QA (idempotente)
+# Aplica migraciones de gamificación (idempotente)
 dotnet ef database update
 ```
 
-Tras eso, QA usa:
-
-| Bloque | Recurso creado por migración |
-|--------|------------------------------|
-| #29 / A / E | Tareas `QA Bloque A - Racha 1`, `QA Bloque A - Racha 2`, `QA Bloque E - Snapshot XP` |
-| D | Ítems 1–7 del catálogo + `QA Bloque D - Recompensa test` (required XP **100** → claim con poco XP) |
-| D (403) | Ítem 1 `Poción Protectora` (required XP **500**) |
-
-IDs de recompensa: consultar `SELECT "ID_REWARD_ITEM", "DSC_REWARD_ITEM_NAME" FROM "LULM_REWARD_ITEM";` — suelen ser 1 = Poción, último = QA test.
+No hay seed automático de tareas QA ni catálogo de recompensas en esta rama. QA usa tareas/hábitos existentes del backup o crea tareas manualmente vía API.
 
 ### BD local (importante para Adam / QA)
 
@@ -408,9 +360,8 @@ Alineado con patrones #27–#28 (Adam):
 | Completar tarea, racha, snapshot XP | `HabitService.CompleteTaskAsync` |
 | Cálculo puro de racha | `StreakCalculator` (estático) |
 | Protección de racha | `StreakService` + `StreakController` |
-| Reclamar recompensa | `RewardItemService.ClaimAsync` + `RewardController` |
 | Persistencia transaccional complete | `HabitTaskRepository.CompleteTaskAsync` (upsert streak log) |
-| Eventos | `PlayerEventRepository` + registro desde servicios |
+| Eventos internos | `PlayerEventRepository` + registro desde `HabitService` / `StreakService` |
 | Mapeo XP/nivel/response | `PlayerProgressMapper` |
 
 **Auth endpoints nuevos:** solo JWT (`[Authorize]` + `ResolveAuthenticatedUserId` desde claims). No `X-User-Id`.
@@ -419,13 +370,12 @@ Alineado con patrones #27–#28 (Adam):
 
 ---
 
-## 6. Suite de tests (55)
+## 6. Suite de tests (52)
 
 | Archivo | Qué cubre |
 |---------|-----------|
 | `HabitServiceUpdateTaskTests` | Complete #29, level-up, validaciones, PUT preserva completion |
 | `StreakCalculatorTests` | Gap 1 día, reinicio, salvavidas, hueco 4 días |
-| `RewardItemServiceTests` | Claim con `RequiredExperiencePoints`, no CostGold |
 | `PlayerProgressMapperTests` | XP por dificultad, nivel |
 
 Ejecutar:
@@ -457,14 +407,12 @@ cd LevelUpLife-Backend.Tests && dotnet test
 | 6 | 4º intento protección en el mes | `POST .../protection` | 403 límite mensual |
 | 7 | Hueco con 1 día protegido | protection + complete tras ausencia | racha +1, evento `STREAK_CONTINUED` |
 | 8 | Editar tarea completada | `PUT .../habit-tasks/{id}` | `isCompleted` true, snapshot XP intacto |
-| 9 | Reclamar sin XP suficiente | `POST /api/rewards/{id}/claim` | 403 (usa `RequiredExperiencePoints`) |
-| 10 | Reclamar con XP OK | `POST .../claim` | 200, inventario +1 |
-| 11 | Doble claim | `POST .../claim` x2 | segundo 400 |
-| 12 | Ver eventos | `GET /api/player/events` | lista con LEVEL_UP, etc. |
+| 9 | Subida de nivel | `PATCH .../complete` con XP suficiente | `newLevel` sube; fila `LEVEL_UP` en `LULH_PLAYER_EVENT` |
 
-### Bloque C
+### Bloque C / D
 
-Marcar como **⚠️ Pendiente / no implementado** en la guía.
+- **Bloque C:** ⚠️ Pendiente / no implementado.
+- **Bloque D (claim):** ⏸️ Fuera de esta rama — no probar claim ni inventario.
 
 ---
 
@@ -472,50 +420,48 @@ Marcar como **⚠️ Pendiente / no implementado** en la guía.
 
 ```
 Controllers/
-  HabitTaskController.cs      # PATCH complete (sin cambio de contrato)
+  HabitTaskController.cs      # PATCH complete
   StreakController.cs         # POST protection
-  RewardController.cs         # POST claim
-  PlayerController.cs         # GET events
 
 Services/
-  HabitService.cs             # Complete + motor racha + eventos
+  HabitService.cs             # Complete + motor racha + eventos internos
   StreakCalculator.cs
   StreakService.cs
-  RewardItemService.cs        # ClaimAsync
 
 Models/
   StreakLog.cs                # ProtectionType, CompletionRecorded
   HabitTask.cs                # EarnedXpSnapshot
-  RewardItem.cs               # RequiredExperiencePoints
   PlayerEvent.cs, PlayerEventType.cs
-  PlayerInventory.cs, RewardClaim.cs
   StreakProtectionType.cs
 
 Repositories/
-  StreakLogRepository.cs      # + consultas gap/último log
+  StreakLogRepository.cs
   PlayerEventRepository.cs
-  PlayerInventoryRepository.cs
-  RewardClaimRepository.cs
   HabitTaskRepository.cs      # upsert streak log en transacción
 
 Mappers/
   PlayerProgressMapper.cs
 
 Infrastructure/
-  StreakProtectionOptions.cs
-  Errors/StreakError.cs, RewardError.cs
+  Configuration/StreakProtectionOptions.cs
+  Errors/StreakError.cs, TaskError.cs
 
 Migrations/
-  20260613224949_AddGamificationStreakRewards.cs
-  20260613230331_AddRewardItemRequiredExperiencePoints.cs
+  202606130001_Issue29StreakCompletionTracking.cs
+  202606130003_BlockBStreakProtection.cs
+  202606130004_BlockEHabitTaskEarnedXpSnapshot.cs
+  202606130005_AddPlayerEvents.cs
 
 LevelUpLife-Backend.Tests/
   StreakCalculatorTests.cs
-  RewardItemServiceTests.cs
-  HabitServiceUpdateTaskTests.cs (extendido)
+  HabitServiceUpdateTaskTests.cs
+  PlayerProgressMapperTests.cs
 
 docs/
-  gamification-design-decisions.md  (este documento)
+  gamification-design-decisions.md
+Scripts/
+  baseline-ef-after-backup.sql
+  update-ef-history-after-migration-split.sql
 ```
 
 ---
@@ -527,10 +473,8 @@ docs/
 - [ ] Transacción de complete en repositorio.
 - [ ] Endpoints nuevos solo JWT (no `X-User-Id`).
 - [ ] Modelo salvavidas de protección — ¿OK producto o cambiar a “protección por cada día del hueco”?
-- [ ] `CostGold` vs `RequiredExperiencePoints` en recompensas — separación correcta para Economía futura.
 - [ ] Migraciones idempotentes compatibles con backup SQL del equipo.
-- [ ] Soft delete: reclamos usan `IsActive`; no hay borrado físico de historial.
-- [ ] Bloque C explícitamente fuera de alcance.
+- [ ] Bloque C y Bloque D (claim) explícitamente fuera de alcance.
 - [ ] Sección **1.3 Impacto en funcionalidad existente** — regresión P0/P1 acordada con QA.
 
 ---
@@ -543,4 +487,4 @@ docs/
 
 ---
 
-*Última actualización: sección 1.3 impacto en funcionalidad existente; revisión CostGold/RequiredExperiencePoints; tests hueco 4 días; migración con Postgres activo.*
+*Última actualización: alcance reducido a #29 + bloques A, B, E; sin claim de recompensas ni GET events; migraciones partidas por bloque; 52 tests.*
