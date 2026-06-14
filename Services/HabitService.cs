@@ -16,7 +16,6 @@ public class HabitService : IHabitService
     private readonly IRepetitionCriteriaRepository _repetitionCriteriaRepository;
     private readonly ITimerCriteriaRepository _timerCriteriaRepository;
     private readonly IStreakLogRepository _streakLogRepository;
-    private readonly IPlayerEventRepository _playerEventRepository;
     private readonly AppDbContext _context;
 
     public HabitService(
@@ -25,7 +24,6 @@ public class HabitService : IHabitService
         IRepetitionCriteriaRepository repetitionCriteriaRepository,
         ITimerCriteriaRepository timerCriteriaRepository,
         IStreakLogRepository streakLogRepository,
-        IPlayerEventRepository playerEventRepository,
         AppDbContext context)
     {
         _habitRepository = habitRepository;
@@ -33,7 +31,6 @@ public class HabitService : IHabitService
         _repetitionCriteriaRepository = repetitionCriteriaRepository;
         _timerCriteriaRepository = timerCriteriaRepository;
         _streakLogRepository = streakLogRepository;
-        _playerEventRepository = playerEventRepository;
         _context = context;
     }
 
@@ -318,10 +315,7 @@ public class HabitService : IHabitService
         player.Level = PlayerProgressMapper.CalculateLevel(player.ExperiencePoints);
 
         var streakResult = await ApplyStreakUpdateAsync(player, completionDate);
-
-        await _habitTaskRepository.CompleteTaskAsync(task, streakResult.Log);
-
-        await RecordCompletionEventsAsync(
+        var completionEvents = BuildCompletionEvents(
             player.Id,
             streakResult,
             previousLevel,
@@ -329,47 +323,54 @@ public class HabitService : IHabitService
             completionDate
         );
 
+        await _habitTaskRepository.CompleteTaskAsync(task, streakResult.Log, completionEvents);
+
         return PlayerProgressMapper.ToCompleteResponse(xpEarned, player.Level, streakResult.Updated);
     }
 
-    private async Task RecordCompletionEventsAsync(
+    private static IReadOnlyList<PlayerEvent> BuildCompletionEvents(
         int playerUserId,
         StreakUpdateResult streakResult,
         int previousLevel,
         int newLevel,
         DateOnly completionDate)
     {
+        var events = new List<PlayerEvent>();
+        var createdAt = DateTime.UtcNow;
+
         if (streakResult.Updated && streakResult.WasReset)
         {
-            await _playerEventRepository.AddAsync(new PlayerEvent
+            events.Add(new PlayerEvent
             {
                 PlayerUserId = playerUserId,
                 EventType = PlayerEventType.STREAK_RESET,
                 PayloadJson = $"{{\"date\":\"{completionDate:yyyy-MM-dd}\",\"newStreak\":1}}",
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = createdAt,
             });
         }
         else if (streakResult.Updated && streakResult.ContinuedViaProtection)
         {
-            await _playerEventRepository.AddAsync(new PlayerEvent
+            events.Add(new PlayerEvent
             {
                 PlayerUserId = playerUserId,
                 EventType = PlayerEventType.STREAK_CONTINUED,
                 PayloadJson = $"{{\"date\":\"{completionDate:yyyy-MM-dd}\",\"streak\":{streakResult.NewStreakCount}}}",
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = createdAt,
             });
         }
 
         if (newLevel > previousLevel)
         {
-            await _playerEventRepository.AddAsync(new PlayerEvent
+            events.Add(new PlayerEvent
             {
                 PlayerUserId = playerUserId,
                 EventType = PlayerEventType.LEVEL_UP,
                 PayloadJson = $"{{\"previousLevel\":{previousLevel},\"newLevel\":{newLevel}}}",
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = createdAt,
             });
         }
+
+        return events;
     }
 
     private sealed record StreakUpdateResult(

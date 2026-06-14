@@ -25,18 +25,13 @@ public class HabitServiceUpdateTaskTests
     private static HabitService CreateService(
         AppDbContext context,
         Mock<IHabitTaskRepository> taskRepo,
-        Mock<IStreakLogRepository>? streakRepo = null,
-        Mock<IPlayerEventRepository>? playerEventRepo = null
+        Mock<IStreakLogRepository>? streakRepo = null
     )
     {
         var habitRepo = new Mock<IHabitRepository>();
         var criteriaRepo = new Mock<IRepetitionCriteriaRepository>();
         var timerRepo = new Mock<ITimerCriteriaRepository>();
         var streakLogRepo = streakRepo ?? CreateDefaultStreakRepoMock();
-        var playerEvents = playerEventRepo ?? new Mock<IPlayerEventRepository>();
-        playerEvents
-            .Setup(r => r.AddAsync(It.IsAny<PlayerEvent>()))
-            .Returns(Task.CompletedTask);
 
         return new HabitService(
             habitRepo.Object,
@@ -44,7 +39,6 @@ public class HabitServiceUpdateTaskTests
             criteriaRepo.Object,
             timerRepo.Object,
             streakLogRepo.Object,
-            playerEvents.Object,
             context
         );
     }
@@ -66,7 +60,7 @@ public class HabitServiceUpdateTaskTests
 
     private static HabitTask SampleTask(int taskId = 1, int habitId = 10, int userId = 2)
     {
-        var user = new PlayerUser { Id = userId, UserName = "testuser" };
+        var user = new PlayerUser { Id = userId, UserName = "testuser", Level = 1, ExperiencePoints = 0 };
         var category = new HabitCategory { Id = 1, Name = "Salud" };
         var discipline = new HabitDiscipline
         {
@@ -259,7 +253,10 @@ public class HabitServiceUpdateTaskTests
 
         taskRepo.Setup(r => r.GetTrackedByIdForUserAsync(1, 2)).ReturnsAsync(task);
         taskRepo
-            .Setup(r => r.CompleteTaskAsync(It.IsAny<HabitTask>(), It.IsAny<StreakLog?>()))
+            .Setup(r => r.CompleteTaskAsync(
+                It.IsAny<HabitTask>(),
+                It.IsAny<StreakLog?>(),
+                It.IsAny<IReadOnlyList<PlayerEvent>?>()))
             .Returns(Task.CompletedTask);
         streakRepo
             .Setup(r => r.GetByPlayerAndDateAsync(2, It.IsAny<DateOnly>()))
@@ -281,7 +278,12 @@ public class HabitServiceUpdateTaskTests
         Assert.Equal(1, result.NewLevel);
         Assert.True(result.StreakUpdated);
         Assert.Equal(50, task.Habit!.User.ExperiencePoints);
-        taskRepo.Verify(r => r.CompleteTaskAsync(task, It.IsAny<StreakLog>()), Times.Once);
+        taskRepo.Verify(
+            r => r.CompleteTaskAsync(
+                task,
+                It.IsAny<StreakLog>(),
+                It.Is<IReadOnlyList<PlayerEvent>>(events => events.Count == 0)),
+            Times.Once);
     }
 
     [Fact]
@@ -393,7 +395,10 @@ public class HabitServiceUpdateTaskTests
 
         taskRepo.Setup(r => r.GetTrackedByIdForUserAsync(1, 2)).ReturnsAsync(task);
         taskRepo
-            .Setup(r => r.CompleteTaskAsync(It.IsAny<HabitTask>(), It.IsAny<StreakLog?>()))
+            .Setup(r => r.CompleteTaskAsync(
+                It.IsAny<HabitTask>(),
+                It.IsAny<StreakLog?>(),
+                It.IsAny<IReadOnlyList<PlayerEvent>?>()))
             .Returns(Task.CompletedTask);
         streakRepo
             .Setup(r => r.GetByPlayerAndDateAsync(2, It.IsAny<DateOnly>()))

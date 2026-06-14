@@ -1,4 +1,5 @@
 using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
 using System.Security.Claims;
 using LevelUpLifeBackend.DTOs.Requests;
 using LevelUpLifeBackend.Infrastructure.Errors;
@@ -30,7 +31,18 @@ public class StreakController : ControllerBase
     {
         if (!ModelState.IsValid)
         {
-            return ValidationProblem(ModelState);
+            var details = ModelState.Values
+                .SelectMany(v => v.Errors)
+                .Select(e => e.ErrorMessage)
+                .FirstOrDefault(e => !string.IsNullOrWhiteSpace(e))
+                ?? "The request body is invalid.";
+
+            return BadRequest(new
+            {
+                success = false,
+                message = "Invalid request.",
+                details,
+            });
         }
 
         var userId = ResolveAuthenticatedUserId();

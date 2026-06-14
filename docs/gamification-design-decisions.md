@@ -4,7 +4,7 @@ Documento de entrega para revisión de **Adam** (y QA). Describe la implementaci
 
 **Rama de trabajo:** `feature/29-habit-task-xp-and-streak` (basada en `dev` con #28 mergeado).
 
-**Estado tests:** `52/52` pasando (`dotnet test` en `LevelUpLife-Backend.Tests`).
+**Estado tests:** `60/60` pasando (`dotnet test` en `LevelUpLife-Backend.Tests`).
 
 **Fuera de alcance en esta rama:** Bloque D (claim de recompensas), seed de catálogo, `GET /api/player/events` — lo implementará el equipo de recompensas.
 
@@ -170,7 +170,7 @@ Auth: JWT o X-User-Id (mismo patrón que el resto de habit-tasks)
 - Al completar: `NUM_HABIT_TASK_EARNED_XP` = XP calculado en ese momento (`XpValue` o fallback EASY=10, MEDIUM=25, HARD=50).
 - Editar la tarea después **no** cambia el XP ya otorgado.
 
-**Eventos generados (persistidos en BD, sin GET público en esta rama):**
+**Eventos generados (misma transacción que complete; no push):**
 
 - `STREAK_RESET` — reinicio por hueco sin protección.
 - `STREAK_CONTINUED` — racha salvada por protección en hueco > 1 día.
@@ -206,7 +206,7 @@ Auth: Bearer JWT únicamente (userId desde claims, no body/header arbitrario)
 | HTTP | Cuándo |
 |------|--------|
 | 401 | Token inválido o ausente |
-| 400 | Protección ya activa hoy / ya completó tarea hoy |
+| 400 | Protección ya activa hoy / ya completó tarea hoy / **tipo inválido** (`{success, message, details}`) |
 | 403 | Límite mensual excedido (`StreakProtection:MaxPerMonth`, default **3**) |
 | 404 | Jugador no encontrado/inactivo |
 
@@ -255,6 +255,7 @@ LIMIT 10;
 | Tema | Decisión |
 |------|----------|
 | Reinicio vs pausa | **Reinicio a 1** si hueco > 1 día sin protección. Nunca valores negativos en `DaysStreak`. |
+| Fuente de verdad | El conteo se deriva de `LULH_STREAK_LOG`, no de `NUM_PLAYER_USER_DAYS_STREAK`. Un valor legacy en perfil sin logs recientes se recalcula en la primera completion. |
 | Día consecutivo | Último log con completion el día anterior → +1. |
 | Anti-abuso | Solo último log **real** anterior a `completedAt`. No se crean logs intermedios aunque manden fechas pasadas consecutivas. |
 | XP / nivel | Independientes del reinicio de racha. |
@@ -359,8 +360,8 @@ Alineado con patrones #27–#28 (Adam):
 |-----------------|-----------|
 | Completar tarea, racha, snapshot XP | `HabitService.CompleteTaskAsync` |
 | Cálculo puro de racha | `StreakCalculator` (estático) |
-| Protección de racha | `StreakService` + `StreakController` |
-| Persistencia transaccional complete | `HabitTaskRepository.CompleteTaskAsync` (upsert streak log) |
+| Persistencia transaccional complete | `HabitTaskRepository.CompleteTaskAsync` (streak log + eventos en la misma transacción) |
+| Protección de racha | `StreakService` + `StreakController` (log + evento en la misma transacción) |
 | Eventos internos | `PlayerEventRepository` + registro desde `HabitService` / `StreakService` |
 | Mapeo XP/nivel/response | `PlayerProgressMapper` |
 
@@ -370,12 +371,13 @@ Alineado con patrones #27–#28 (Adam):
 
 ---
 
-## 6. Suite de tests (52)
+## 6. Suite de tests (60)
 
 | Archivo | Qué cubre |
 |---------|-----------|
 | `HabitServiceUpdateTaskTests` | Complete #29, level-up, validaciones, PUT preserva completion |
 | `StreakCalculatorTests` | Gap 1 día, reinicio, salvavidas, hueco 4 días |
+| `StreakProtectionTypeParserTests` | Tipos válidos/inválidos de protección |
 | `PlayerProgressMapperTests` | XP por dificultad, nivel |
 
 Ejecutar:
@@ -444,6 +446,7 @@ Mappers/
 
 Infrastructure/
   Configuration/StreakProtectionOptions.cs
+  StreakProtectionTypeParser.cs
   Errors/StreakError.cs, TaskError.cs
 
 Migrations/
@@ -454,6 +457,7 @@ Migrations/
 
 LevelUpLife-Backend.Tests/
   StreakCalculatorTests.cs
+  StreakProtectionTypeParserTests.cs
   HabitServiceUpdateTaskTests.cs
   PlayerProgressMapperTests.cs
 
@@ -487,4 +491,4 @@ Scripts/
 
 ---
 
-*Última actualización: alcance reducido a #29 + bloques A, B, E; sin claim de recompensas ni GET events; migraciones partidas por bloque; 52 tests.*
+*Última actualización: eventos en transacción con complete/protection; validación de tipo de protección con envelope unificado; 60 tests.*

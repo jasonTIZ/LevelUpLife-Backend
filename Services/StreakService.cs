@@ -1,6 +1,7 @@
 using LevelUpLifeBackend.Data;
 using LevelUpLifeBackend.DTOs.Requests;
 using LevelUpLifeBackend.DTOs.Responses;
+using LevelUpLifeBackend.Infrastructure;
 using LevelUpLifeBackend.Infrastructure.Configuration;
 using LevelUpLifeBackend.Infrastructure.Errors;
 using LevelUpLifeBackend.Mappers;
@@ -15,18 +16,15 @@ public class StreakService : IStreakService
 {
     private readonly AppDbContext _context;
     private readonly IStreakLogRepository _streakLogRepository;
-    private readonly IPlayerEventRepository _playerEventRepository;
     private readonly StreakProtectionOptions _options;
 
     public StreakService(
         AppDbContext context,
         IStreakLogRepository streakLogRepository,
-        IPlayerEventRepository playerEventRepository,
         IOptions<StreakProtectionOptions> options)
     {
         _context = context;
         _streakLogRepository = streakLogRepository;
-        _playerEventRepository = playerEventRepository;
         _options = options.Value;
     }
 
@@ -34,6 +32,19 @@ public class StreakService : IStreakService
         int userId,
         ActivateStreakProtectionRequestDto request)
     {
+        if (!StreakProtectionTypeParser.TryParse(request.Type, out var protectionType))
+        {
+            throw new StreakError(
+                new ErrorResponse
+                {
+                    Code = 400,
+                    Message = "Invalid streak protection type.",
+                    Details = "Type must be one of: TRABAJO, EVALUACION, EMERGENCIA.",
+                },
+                StreakFailureKind.InvalidProtectionType
+            );
+        }
+
         var player = await _context.PlayerUsers
             .FirstOrDefaultAsync(p => p.Id == userId && p.IsActive);
 
@@ -97,25 +108,42 @@ public class StreakService : IStreakService
             );
         }
 
-        if (existingLog is not null)
-        {
-            existingLog.ProtectionUsed = true;
-            existingLog.ProtectionType = request.Type;
-            await _streakLogRepository.UpdateAsync(existingLog);
-        }
-        else
-        {
-            var protectionLog = PlayerProgressMapper.ToProtectionStreakLog(player, today, request.Type);
-            await _streakLogRepository.AddAsync(protectionLog);
-        }
-
-        await _playerEventRepository.AddAsync(new PlayerEvent
+        var playerEvent = new PlayerEvent
         {
             PlayerUserId = userId,
             EventType = PlayerEventType.STREAK_PROTECTION_USED,
-            PayloadJson = $"{{\"type\":\"{request.Type}\",\"date\":\"{today:yyyy-MM-dd}\"}}",
+            PayloadJson = $"{{\"type\":\"{protectionType}\",\"date\":\"{today:yyyy-MM-dd}\"}}",
             CreatedAt = DateTime.UtcNow,
-        });
+        };
+
+        await using var transaction = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            if (existingLog is not null)
+            {
+                existingLog.ProtectionUsed = true;
+                existingLog.ProtectionType = protectionType;
+                _context.StreakLogs.Update(existingLog);
+            }
+            else
+            {
+                var protectionLog = PlayerProgressMapper.ToProtectionStreakLog(
+                    player,
+                    today,
+                    protectionType
+                );
+                await _context.StreakLogs.AddAsync(protectionLog);
+            }
+
+            await _context.PlayerEvents.AddAsync(playerEvent);
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
 
         var remaining = Math.Max(0, _options.MaxPerMonth - usedThisMonth - 1);
 
