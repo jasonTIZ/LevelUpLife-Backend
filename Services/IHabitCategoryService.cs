@@ -6,6 +6,8 @@ public interface IHabitCategoryService
 {
     Task<PagedResultDto<HabitCategoryResponseDto>> GetActiveHabitCategoriesPaginatedAsync(
         int pageNumber,
-        int pageSize
+        int pageSize,
+        string? search = null,
+        int? userId = null
     );
 }

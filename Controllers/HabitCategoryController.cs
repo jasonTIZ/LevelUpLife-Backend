@@ -19,7 +19,8 @@ public class HabitCategoryController : ControllerBase
     [HttpGet("list")]
     public async Task<IActionResult> GetActiveHabitCategories(
         [FromQuery] int pageNumber = 1,
-        [FromQuery] int pageSize = 10
+        [FromQuery] int pageSize = 10,
+        [FromQuery] string? search = null
     )
     {
         try
@@ -29,9 +30,18 @@ public class HabitCategoryController : ControllerBase
             if (pageSize < 1 || pageSize > 100)
                 pageSize = 10;
 
+            // El conteo de hábitos por categoría se calcula solo para el usuario
+            // autenticado (header X-User-Id). Si no viene, el conteo será 0.
+            int? userId = null;
+            var userIdString = Request.Headers["X-User-Id"].FirstOrDefault();
+            if (int.TryParse(userIdString, out var parsedUserId))
+                userId = parsedUserId;
+
             var pagedResult = await _habitCategoryService.GetActiveHabitCategoriesPaginatedAsync(
                 pageNumber,
-                pageSize
+                pageSize,
+                search,
+                userId
             );
 
             if (pagedResult.Items == null || !pagedResult.Items.Any())
@@ -45,10 +55,10 @@ public class HabitCategoryController : ControllerBase
                 new
                 {
                     success = true,
-                    data = pagedResult,
+                    data = pagedResult.Items,
                     pagination = new
                     {
-                        currenPage = pagedResult.CurrentPage,
+                        currentPage = pagedResult.CurrentPage,
                         pageSize = pagedResult.PageSize,
                         totalPages = pagedResult.TotalPages,
                         totalRecords = pagedResult.TotalRecords,
