@@ -28,13 +28,26 @@ docker run -d --name leveluplife-postgres \
   postgres:16-alpine
 ```
 
-4. Carga el esquema y datos de prueba:
+4. Carga el esquema base y aplica migraciones de gamificación:
 
 ```bash
+# Esquema base del equipo (usuarios, hábitos, etc.)
 docker exec -i leveluplife-postgres psql -U levelup -d leveluplife < Backups/LevelUpLife-Backup-08-05-2026.sql
+
+# Solo la primera vez tras backup (evita fallo de InitialCreate):
+docker exec -i leveluplife-postgres psql -U levelup -d leveluplife \
+  < Scripts/baseline-ef-after-backup.sql
+
+# Migraciones EF (gamificación #29, rachas, snapshot XP) — idempotente sobre el backup
+dotnet ef database update
 ```
 
-> **Nota:** `dotnet ef database update` puede fallar si el modelo EF no coincide exactamente con las migraciones. Para desarrollo local, el backup SQL es el camino recomendado del equipo.
+Las migraciones crean/actualizan:
+
+- Columnas y tablas de rachas, eventos internos (`LEVEL_UP`, racha), snapshot XP
+- **No incluye** claim de recompensas (Bloque D — lo implementará otro compañero)
+
+> **QA:** no hace falta SQL manual. Con Postgres arriba: `docker start leveluplife-postgres` → backup (si es BD nueva) → `dotnet ef database update`.
 
 5. Ejecuta la API:
 
