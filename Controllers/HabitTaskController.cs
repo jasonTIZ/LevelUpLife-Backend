@@ -166,6 +166,114 @@ public class HabitTaskController : ControllerBase
         }
     }
 
+    [HttpDelete("{id:int:min(1)}")]
+    public async Task<IActionResult> Deactivate(int id)
+    {
+        var userId = ResolveUserId();
+        if (userId is null)
+        {
+            return Unauthorized(
+                new
+                {
+                    code = "UNAUTHORIZED",
+                    message = "Unauthorized access",
+                    details = "A valid JWT or X-User-Id header is required.",
+                }
+            );
+        }
+
+        try
+        {
+            await _habitService.DeactivateTaskAsync(id, userId.Value);
+            return Ok(new { message = "Task deactivated successfully" });
+        }
+        catch (NotFoundError ex)
+        {
+            return NotFound(
+                new
+                {
+                    code = "TASK_NOT_FOUND",
+                    message = ex.Payload.Message,
+                    details = ex.Payload.Details,
+                }
+            );
+        }
+        catch (Exception)
+        {
+            return StatusCode(
+                StatusCodes.Status500InternalServerError,
+                new
+                {
+                    code = "SERVER_ERROR",
+                    message = "Internal server error",
+                    details = "An unexpected error occurred while deactivating the habit task.",
+                }
+            );
+        }
+    }
+
+    [HttpPatch("{id:int:min(1)}/complete")]
+    public async Task<IActionResult> Complete(int id, [FromBody] CompleteHabitTaskRequestDto request)
+    {
+        if (!ModelState.IsValid)
+        {
+            return ValidationProblem(ModelState);
+        }
+
+        var userId = ResolveUserId();
+        if (userId is null)
+        {
+            return Unauthorized(
+                new
+                {
+                    code = "UNAUTHORIZED",
+                    message = "Unauthorized access",
+                    details = "A valid JWT or X-User-Id header is required.",
+                }
+            );
+        }
+
+        try
+        {
+            var result = await _habitService.CompleteTaskAsync(id, userId.Value, request);
+            return Ok(result);
+        }
+        catch (NotFoundError ex)
+        {
+            return NotFound(
+                new
+                {
+                    code = "TASK_NOT_FOUND",
+                    message = ex.Payload.Message,
+                    details = ex.Payload.Details,
+                }
+            );
+        }
+        catch (TaskError ex) when (ex.Kind == TaskFailureKind.CompletionRequirementsNotMet)
+        {
+            return BadRequest(
+                new
+                {
+                    code = "COMPLETION_REQUIREMENTS_NOT_MET",
+                    message = ex.Payload.Message,
+                    details = ex.Payload.Details,
+                }
+            );
+        }
+        catch (Exception)
+        {
+            return StatusCode(
+                StatusCodes.Status500InternalServerError,
+                new
+                {
+                    code = "SERVER_ERROR",
+                    message = "Internal server error",
+                    details = "An unexpected error occurred while completing the habit task.",
+                }
+            );
+        }
+    }
+
     [HttpGet("{taskId:int}")]
     public async Task<IActionResult> GetById(int taskId)
     {

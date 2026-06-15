@@ -11,6 +11,7 @@ using LevelUpLifeBackend.Repositories;
 using LevelUpLifeBackend.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 
@@ -57,7 +58,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
             .MapEnum<TaskPeriodUnit>("ENUM_PERIOD_UNIT", nameTranslator: new NpgsqlNullNameTranslator())
             .MapEnum<TaskCompletionCriteria>("ENUM_COMPLETION_CRITERIA", nameTranslator: new NpgsqlNullNameTranslator())
             .MapEnum<TaskEvidence>("ENUM_EVIDENCE", nameTranslator: new NpgsqlNullNameTranslator())
-    ));
+    )
+    .ConfigureWarnings(w => w.Ignore(CoreEventId.ManyServiceProvidersCreatedWarning)));
 
 // Repositorios y Servicios de Hábitos
 builder.Services.AddScoped<IHabitRepository, HabitRepository>();
@@ -70,8 +72,18 @@ builder.Services.AddScoped<IRepetitionCriteriaService, RepetitionCriteriaService
 builder.Services.AddScoped<ITimerCriteriaRepository, TimerCriteriaRepository>();
 builder.Services.AddScoped<ITimerCriteriaService, TimerCriteriaService>();
 
+builder.Services.AddScoped<IStreakLogRepository, StreakLogRepository>();
+builder.Services.AddScoped<IPlayerEventRepository, PlayerEventRepository>();
+
 builder.Services.AddScoped<IRewardItemRepository, RewardItemRepository>();
 builder.Services.AddScoped<IRewardItemService, RewardItemService>();
+builder.Services.AddScoped<IStreakService, StreakService>();
+
+builder.Services.Configure<LevelUpLifeBackend.Infrastructure.Configuration.StreakProtectionOptions>(
+    builder.Configuration.GetSection(
+        LevelUpLifeBackend.Infrastructure.Configuration.StreakProtectionOptions.SectionName
+    )
+);
 
 // Services and Repositories of Habit Category
 builder.Services.AddScoped<IHabitCategoryRepository, HabitCategoryRepository>();

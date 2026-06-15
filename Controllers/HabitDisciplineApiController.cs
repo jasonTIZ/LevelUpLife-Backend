@@ -18,6 +18,33 @@ public class HabitDisciplineApiController : ControllerBase
         _habitDisciplineService = habitDisciplineService;
     }
 
+    [Authorize]
+    [HttpGet]
+    public async Task<IActionResult> GetAll()
+    {
+        try
+        {
+            var disciplines = await _habitDisciplineService.GetAllDisciplinesAsync();
+            return Ok(disciplines);
+        }
+        catch (ServerError ex)
+        {
+            return StatusCode(ex.HttpStatusCode, ex.Payload);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(
+                500,
+                new ErrorResponse
+                {
+                    Code = 500,
+                    Message = "An unexpected error occurred.",
+                    Details = ex.Message,
+                }
+            );
+        }
+    }
+
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(int id)
     {

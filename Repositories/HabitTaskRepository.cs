@@ -32,6 +32,11 @@ public class HabitTaskRepository : IHabitTaskRepository
             .FirstOrDefaultAsync(t => t.Id == taskId && t.Habit!.User.Id == userId);
     }
 
+    public async Task UpdateAsync(HabitTask task)
+    {
+        await _context.SaveChangesAsync();
+    }
+
     public async Task UpdateWithRepetitionCriteriaAsync(HabitTask task)
     {
         await using var transaction = await _context.Database.BeginTransactionAsync();
@@ -92,5 +97,40 @@ public class HabitTaskRepository : IHabitTaskRepository
     public async Task<bool> ExistsAsync(int taskId)
     {
         return await _context.HabitTasks.AnyAsync(ht => ht.Id == taskId);
+    }
+
+    public async Task CompleteTaskAsync(
+        HabitTask task,
+        StreakLog? streakLog,
+        IReadOnlyList<PlayerEvent>? playerEvents = null)
+    {
+        await using var transaction = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            if (streakLog is not null)
+            {
+                if (streakLog.Id == 0)
+                {
+                    await _context.StreakLogs.AddAsync(streakLog);
+                }
+                else
+                {
+                    _context.StreakLogs.Update(streakLog);
+                }
+            }
+
+            if (playerEvents is { Count: > 0 })
+            {
+                await _context.PlayerEvents.AddRangeAsync(playerEvents);
+            }
+
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
     }
 }
