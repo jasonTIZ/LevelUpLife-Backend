@@ -20,6 +20,7 @@ public class HabitTask
     public TaskPeriodUnit PeriodUnit { get; set; }
     public DateOnly StartDate { get; set; }
     public bool IsCompleted { get; set; }
+    public int? EarnedXpSnapshot { get; set; }
     public TaskCompletionCriteria CompletionCriteria { get; set; }
     public TaskEvidence? Evidence { get; set; }
     public bool IsActive { get; set; }

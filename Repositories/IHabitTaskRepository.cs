@@ -14,4 +14,9 @@ public interface IHabitTaskRepository
     Task<EvidenceStorage?> GetEvidenceByIdAsync(int taskId, int id);
     Task DeleteEvidenceAsync(EvidenceStorage evidence);
     Task<bool> ExistsAsync(int taskId);
+    Task CompleteTaskAsync(
+        HabitTask task,
+        StreakLog? streakLog,
+        IReadOnlyList<PlayerEvent>? playerEvents = null
+    );
 }
