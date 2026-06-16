@@ -24,6 +24,54 @@ public class HabitDisciplineServiceTests
     }
 
     [Fact]
+    public async Task GetAllDisciplinesAsync_WhenDisciplinesExist_ReturnsMappedDtos()
+    {
+        var disciplines = new List<HabitDiscipline>
+        {
+            new()
+            {
+                Id = 1,
+                Name = "Strength",
+                Description = "Physical training",
+                IsActive = true,
+                Category = new HabitCategory { Id = 3 },
+            },
+            new()
+            {
+                Id = 2,
+                Name = "Meditation",
+                Description = "Mindfulness practice",
+                IsActive = false,
+                Category = new HabitCategory { Id = 5 },
+            },
+        };
+
+        _repositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(disciplines);
+
+        var result = (await _service.GetAllDisciplinesAsync()).ToList();
+
+        Assert.Equal(2, result.Count);
+        Assert.Equal(1, result[0].IdHabitDiscipline);
+        Assert.Equal(3, result[0].IdHabitCategory);
+        Assert.Equal("Strength", result[0].DscHabitDisciplineName);
+        Assert.Equal("Physical training", result[0].DscHabitDisciplineDescription);
+        Assert.True(result[0].StatusHabitDisciplineIsActive);
+        Assert.Equal(2, result[1].IdHabitDiscipline);
+        Assert.Equal(5, result[1].IdHabitCategory);
+        Assert.False(result[1].StatusHabitDisciplineIsActive);
+    }
+
+    [Fact]
+    public async Task GetAllDisciplinesAsync_WhenRepositoryThrowsException_ThrowsServerError()
+    {
+        _repositoryMock.Setup(r => r.GetAllAsync()).ThrowsAsync(new Exception("Database error"));
+
+        var exception = await Assert.ThrowsAsync<ServerError>(() => _service.GetAllDisciplinesAsync());
+
+        Assert.Equal(500, exception.HttpStatusCode);
+    }
+
+    [Fact]
     public async Task GetDisciplineByIdAsync_WhenDisciplineExists_ReturnsDto()
     {
         var discipline = new HabitDiscipline
