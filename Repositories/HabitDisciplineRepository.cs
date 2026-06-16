@@ -36,4 +36,17 @@ public class HabitDisciplineRepository : IHabitDisciplineRepository
         await _context.SaveChangesAsync();
         return discipline;
     }
+
+    public async Task<HabitDiscipline?> GetTrackedByIdAsync(int id)
+    {
+        return await _context.Disciplines
+            .Include(d => d.Category)
+            .FirstOrDefaultAsync(d => d.Id == id);
+    }
+
+    public async Task UpdateAsync(HabitDiscipline discipline)
+    {
+        _context.Disciplines.Update(discipline);
+        await _context.SaveChangesAsync();
+    }
 }

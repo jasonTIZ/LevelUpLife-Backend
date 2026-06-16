@@ -10,4 +10,8 @@ public interface IHabitDisciplineService
     Task<HabitDisciplineDetailResponseDto> GetDisciplineByIdAsync(int id);
 
     Task<HabitDisciplineDetailResponseDto> CreateDisciplineAsync(CreateHabitDisciplineRequestDto request);
+
+    Task<(bool Success, string Message)> UpdateDisciplineStatusAsync(
+        int id,
+        UpdateHabitDisciplineStatusRequestDto request);
 }

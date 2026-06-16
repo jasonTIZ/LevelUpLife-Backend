@@ -160,4 +160,67 @@ public class HabitDisciplineServiceTests
 
         Assert.Equal(400, exception.HttpStatusCode);
     }
+
+    [Fact]
+    public async Task UpdateDisciplineStatusAsync_WhenDisciplineExists_DeactivatesAndReturnsSuccess()
+    {
+        var discipline = new HabitDiscipline
+        {
+            Id = 3,
+            Name = "Strength",
+            Description = "Physical training",
+            IsActive = true,
+            Category = new HabitCategory { Id = 1 },
+        };
+
+        _repositoryMock.Setup(r => r.GetTrackedByIdAsync(3)).ReturnsAsync(discipline);
+        _repositoryMock.Setup(r => r.UpdateAsync(discipline)).Returns(Task.CompletedTask);
+
+        var request = new UpdateHabitDisciplineStatusRequestDto
+        {
+            StatusHabitDisciplineIsActive = false,
+        };
+
+        var (success, message) = await _service.UpdateDisciplineStatusAsync(3, request);
+
+        Assert.True(success);
+        Assert.Equal("Discipline deactivated successfully.", message);
+        Assert.False(discipline.IsActive);
+        _repositoryMock.Verify(r => r.UpdateAsync(discipline), Times.Once);
+    }
+
+    [Fact]
+    public async Task UpdateDisciplineStatusAsync_WhenDisciplineDoesNotExist_ThrowsNotFoundError()
+    {
+        _repositoryMock.Setup(r => r.GetTrackedByIdAsync(999)).ReturnsAsync((HabitDiscipline?)null);
+
+        var request = new UpdateHabitDisciplineStatusRequestDto
+        {
+            StatusHabitDisciplineIsActive = false,
+        };
+
+        var exception = await Assert.ThrowsAsync<NotFoundError>(
+            () => _service.UpdateDisciplineStatusAsync(999, request));
+
+        Assert.Equal(404, exception.HttpStatusCode);
+        Assert.Equal(404, exception.Payload.Code);
+    }
+
+    [Fact]
+    public async Task UpdateDisciplineStatusAsync_WhenRepositoryThrowsException_ThrowsServerError()
+    {
+        _repositoryMock
+            .Setup(r => r.GetTrackedByIdAsync(1))
+            .ThrowsAsync(new Exception("Database error"));
+
+        var request = new UpdateHabitDisciplineStatusRequestDto
+        {
+            StatusHabitDisciplineIsActive = false,
+        };
+
+        var exception = await Assert.ThrowsAsync<ServerError>(
+            () => _service.UpdateDisciplineStatusAsync(1, request));
+
+        Assert.Equal(500, exception.HttpStatusCode);
+    }
 }

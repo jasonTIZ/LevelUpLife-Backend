@@ -127,6 +127,53 @@ public class HabitDisciplineService : IHabitDisciplineService
         }
     }
 
+    public async Task<(bool Success, string Message)> UpdateDisciplineStatusAsync(
+        int id,
+        UpdateHabitDisciplineStatusRequestDto request)
+    {
+        try
+        {
+            var discipline = await _habitDisciplineRepository.GetTrackedByIdAsync(id);
+
+            if (discipline is null)
+            {
+                throw new NotFoundError(
+                    new ErrorResponse
+                    {
+                        Code = 404,
+                        Message = $"Discipline with ID {id} not found.",
+                        Details = "The requested habit discipline does not exist in the database.",
+                    }
+                );
+            }
+
+            discipline.IsActive = request.StatusHabitDisciplineIsActive;
+            await _habitDisciplineRepository.UpdateAsync(discipline);
+
+            var message = request.StatusHabitDisciplineIsActive
+                ? "Discipline activated successfully."
+                : "Discipline deactivated successfully.";
+
+            return (true, message);
+        }
+        catch (NotFoundError)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            throw new ServerError(
+                500,
+                new ErrorResponse
+                {
+                    Code = 500,
+                    Message = "An unexpected error occurred while updating the habit discipline status.",
+                    Details = ex.Message,
+                }
+            );
+        }
+    }
+
     private static HabitDisciplineDetailResponseDto MapToDto(
         HabitDiscipline discipline,
         int? categoryId = null)
