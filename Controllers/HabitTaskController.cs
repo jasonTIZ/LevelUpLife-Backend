@@ -3,6 +3,7 @@ using System.Security.Claims;
 using LevelUpLifeBackend.DTOs.Requests;
 using LevelUpLifeBackend.Infrastructure.Errors;
 using LevelUpLifeBackend.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LevelUpLifeBackend.Controllers;
@@ -14,15 +15,18 @@ public class HabitTaskController : ControllerBase
     private readonly IHabitService _habitService;
     private readonly IHabitTaskService _habitTaskService;
     private readonly IRepetitionCriteriaService _repetitionCriteriaService;
+    private readonly ITimerCriteriaService _timerCriteriaService;
 
     public HabitTaskController(
         IHabitService habitService,
         IHabitTaskService habitTaskService,
-        IRepetitionCriteriaService repetitionCriteriaService)
+        IRepetitionCriteriaService repetitionCriteriaService,
+        ITimerCriteriaService timerCriteriaService)
     {
         _habitService = habitService;
         _habitTaskService = habitTaskService;
         _repetitionCriteriaService = repetitionCriteriaService;
+        _timerCriteriaService = timerCriteriaService;
     }
 
     [HttpPost]
@@ -336,6 +340,34 @@ public class HabitTaskController : ControllerBase
         {
             var evidences = await _habitTaskService.GetEvidencesByTaskIdAsync(taskId);
             return Ok(evidences);
+        }
+        catch (NotFoundError ex)
+        {
+            return NotFound(ex.Payload);
+        }
+        catch (ServerError ex)
+        {
+            return StatusCode(ex.HttpStatusCode, ex.Payload);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new ErrorResponse
+            {
+                Code = 500,
+                Message = "An unexpected error occurred.",
+                Details = ex.Message
+            });
+        }
+    }
+
+    [Authorize]
+    [HttpDelete("{taskId:int}/timer-criteria/{id:int}")]
+    public async Task<IActionResult> DeactivateTimerCriteria(int taskId, int id)
+    {
+        try
+        {
+            await _timerCriteriaService.DeactivateAsync(taskId, id);
+            return Ok(new { message = "Timer criteria deactivated successfully." });
         }
         catch (NotFoundError ex)
         {
