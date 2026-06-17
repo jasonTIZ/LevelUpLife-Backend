@@ -25,4 +25,11 @@ public class TimerCriteriaRepository : ITimerCriteriaRepository
         return await _context.TimerCriteriaRecords
             .FirstOrDefaultAsync(c => c.HabitTaskId == taskId);
     }
+
+    public async Task<TimerCriteria> UpdateAsync(TimerCriteria criteria)
+    {
+        _context.Update(criteria);
+        await _context.SaveChangesAsync();
+        return criteria;
+    }
 }
