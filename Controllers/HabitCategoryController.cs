@@ -30,8 +30,8 @@ public class HabitCategoryController : ControllerBase
             if (pageSize < 1 || pageSize > 100)
                 pageSize = 10;
 
-            // El conteo de hábitos por categoría se calcula solo para el usuario
-            // autenticado (header X-User-Id). Si no viene, el conteo será 0.
+            // The habit count per category is calculated only for the authenticated
+            // user (X-User-Id header). If it is not provided, the count will be 0.
             int? userId = null;
             var userIdString = Request.Headers["X-User-Id"].FirstOrDefault();
             if (int.TryParse(userIdString, out var parsedUserId))

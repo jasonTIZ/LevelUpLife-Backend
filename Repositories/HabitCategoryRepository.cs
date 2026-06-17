@@ -49,8 +49,8 @@ public class HabitCategoryRepository : IHabitCategoryRepository
             .Select(c => new
             {
                 Category = c,
-                // Conteo de hábitos activos de la categoría que pertenecen al
-                // usuario autenticado. Sin usuario, el conteo es 0.
+                // Count of active habits in the category that belong to the
+                // authenticated user. Without a user, the count is 0.
                 HabitsCount = userId == null
                     ? 0
                     : _context.Habits.Count(x =>
