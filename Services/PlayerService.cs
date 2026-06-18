@@ -10,10 +10,14 @@ namespace LevelUpLifeBackend.Services;
 public class PlayerService : IPlayerService
 {
     private readonly IPlayerRepository _playerRepository;
+    private readonly ILevelProgressService _levelProgressService;
 
-    public PlayerService(IPlayerRepository playerRepository)
+    public PlayerService(
+        IPlayerRepository playerRepository,
+        ILevelProgressService levelProgressService)
     {
         _playerRepository = playerRepository;
+        _levelProgressService = levelProgressService;
     }
 
     public async Task<GetPlayerProfileServiceResult> GetProfileAsync(int playerUserId)
@@ -165,15 +169,22 @@ public class PlayerService : IPlayerService
     private static DateTime? NormalizeLastLogin(DateTime? lastLogin) =>
         lastLogin is { Year: > 1 } ? lastLogin : null;
 
-    private static GetPlayerProfileResponseDto MapToGetProfileResponse(PlayerUser player)
+    private GetPlayerProfileResponseDto MapToGetProfileResponse(PlayerUser player)
     {
+        var levelProgress = _levelProgressService.GetLevelProgress(player.ExperiencePoints);
+
         return new GetPlayerProfileResponseDto
         {
             PlayerUserId = player.Id.ToString(),
             PlayerUserUserName = player.UserName,
-            PlayerUserLevel = player.Level,
+            PlayerUserLevel = levelProgress.CurrentLevel,
             StatusIsActive = player.IsActive,
             PlayerUserLastLogin = NormalizeLastLogin(player.LastLogin),
+            TotalExperiencePoints = levelProgress.TotalExperiencePoints,
+            ExperiencePointsInCurrentLevel = levelProgress.ExperiencePointsInCurrentLevel,
+            ExperiencePointsRequiredForNextLevel = levelProgress.ExperiencePointsRequiredForNextLevel,
+            LevelProgressPercent = levelProgress.LevelProgressPercent,
+            LevelingConfig = _levelProgressService.GetLevelingConfig(),
             PersonData = new GetPlayerProfilePersonDataDto
             {
                 Name = player.Person.Name,

@@ -19,14 +19,4 @@ public class PlayerProgressMapperTests
 
         Assert.Equal(expectedXp, PlayerProgressMapper.CalculateXpEarned(task));
     }
-
-    [Theory]
-    [InlineData(0, 1)]
-    [InlineData(99, 1)]
-    [InlineData(100, 2)]
-    [InlineData(150, 2)]
-    public void CalculateLevel_MapsExperiencePointsToLevel(int experiencePoints, int expectedLevel)
-    {
-        Assert.Equal(expectedLevel, PlayerProgressMapper.CalculateLevel(experiencePoints));
-    }
 }

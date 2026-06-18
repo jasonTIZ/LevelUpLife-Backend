@@ -1,4 +1,3 @@
-using LevelUpLifeBackend.DTOs.Responses;
 using LevelUpLifeBackend.Models;
 
 namespace LevelUpLifeBackend.Mappers;
@@ -18,25 +17,6 @@ public static class PlayerProgressMapper
             TaskDifficulty.MEDIUM => 25,
             TaskDifficulty.HARD => 50,
             _ => 10,
-        };
-    }
-
-    public static int CalculateLevel(int experiencePoints)
-    {
-        return Math.Max(1, 1 + experiencePoints / 100);
-    }
-
-    public static CompleteHabitTaskResponseDto ToCompleteResponse(
-        int xpEarned,
-        int newLevel,
-        bool streakUpdated
-    )
-    {
-        return new CompleteHabitTaskResponseDto
-        {
-            XpEarned = xpEarned,
-            NewLevel = newLevel,
-            StreakUpdated = streakUpdated,
         };
     }
 

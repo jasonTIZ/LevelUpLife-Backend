@@ -85,6 +85,14 @@ builder.Services.Configure<LevelUpLifeBackend.Infrastructure.Configuration.Strea
     )
 );
 
+builder.Services.Configure<LevelUpLifeBackend.Infrastructure.Configuration.LevelingOptions>(
+    builder.Configuration.GetSection(
+        LevelUpLifeBackend.Infrastructure.Configuration.LevelingOptions.SectionName
+    )
+);
+
+builder.Services.AddSingleton<ILevelProgressService, LevelProgressService>();
+
 // Services and Repositories of Habit Category
 builder.Services.AddScoped<IHabitCategoryRepository, HabitCategoryRepository>();
 builder.Services.AddScoped<IHabitCategoryService, HabitCategoryService>();

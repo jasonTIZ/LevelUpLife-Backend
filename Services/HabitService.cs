@@ -16,6 +16,7 @@ public class HabitService : IHabitService
     private readonly IRepetitionCriteriaRepository _repetitionCriteriaRepository;
     private readonly ITimerCriteriaRepository _timerCriteriaRepository;
     private readonly IStreakLogRepository _streakLogRepository;
+    private readonly ILevelProgressService _levelProgressService;
     private readonly AppDbContext _context;
 
     public HabitService(
@@ -24,6 +25,7 @@ public class HabitService : IHabitService
         IRepetitionCriteriaRepository repetitionCriteriaRepository,
         ITimerCriteriaRepository timerCriteriaRepository,
         IStreakLogRepository streakLogRepository,
+        ILevelProgressService levelProgressService,
         AppDbContext context)
     {
         _habitRepository = habitRepository;
@@ -31,6 +33,7 @@ public class HabitService : IHabitService
         _repetitionCriteriaRepository = repetitionCriteriaRepository;
         _timerCriteriaRepository = timerCriteriaRepository;
         _streakLogRepository = streakLogRepository;
+        _levelProgressService = levelProgressService;
         _context = context;
     }
 
@@ -310,9 +313,9 @@ public class HabitService : IHabitService
 
         task.IsCompleted = true;
         task.EarnedXpSnapshot = xpEarned;
-        var previousLevel = player.Level;
+        var previousLevel = _levelProgressService.CalculateLevel(player.ExperiencePoints);
         player.ExperiencePoints += xpEarned;
-        player.Level = PlayerProgressMapper.CalculateLevel(player.ExperiencePoints);
+        player.Level = _levelProgressService.CalculateLevel(player.ExperiencePoints);
 
         var streakResult = await ApplyStreakUpdateAsync(player, completionDate);
         var completionEvents = BuildCompletionEvents(
@@ -325,7 +328,12 @@ public class HabitService : IHabitService
 
         await _habitTaskRepository.CompleteTaskAsync(task, streakResult.Log, completionEvents);
 
-        return PlayerProgressMapper.ToCompleteResponse(xpEarned, player.Level, streakResult.Updated);
+        return _levelProgressService.ToCompleteResponse(
+            xpEarned,
+            previousLevel,
+            player.ExperiencePoints,
+            streakResult.Updated,
+            player.DaysStreak);
     }
 
     private static IReadOnlyList<PlayerEvent> BuildCompletionEvents(

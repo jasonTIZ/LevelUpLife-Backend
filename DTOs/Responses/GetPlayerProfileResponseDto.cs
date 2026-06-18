@@ -13,6 +13,21 @@ public class GetPlayerProfileResponseDto
     [JsonPropertyName("PlayerUserLevel")]
     public int PlayerUserLevel { get; set; }
 
+    [JsonPropertyName("totalExperiencePoints")]
+    public int TotalExperiencePoints { get; set; }
+
+    [JsonPropertyName("experiencePointsInCurrentLevel")]
+    public int ExperiencePointsInCurrentLevel { get; set; }
+
+    [JsonPropertyName("experiencePointsRequiredForNextLevel")]
+    public int ExperiencePointsRequiredForNextLevel { get; set; }
+
+    [JsonPropertyName("levelProgressPercent")]
+    public double LevelProgressPercent { get; set; }
+
+    [JsonPropertyName("levelingConfig")]
+    public LevelingConfigDto LevelingConfig { get; set; } = new();
+
     [JsonPropertyName("statusIsActive")]
     public bool StatusIsActive { get; set; }
 
