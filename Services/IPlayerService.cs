@@ -14,6 +14,13 @@ public interface IPlayerService
     );
 
     Task<DeletePlayerAccountServiceResult> DeleteAccountAsync(int playerUserId, string? reason);
+
+    Task<UploadPlayerAvatarServiceResult> UploadAvatarAsync(
+        int playerUserId,
+        string ifMatchHeader,
+        Stream avatarContent,
+        string contentType,
+        long contentLength);
 }
 
 public enum GetPlayerProfileStatus
@@ -57,4 +64,20 @@ public class DeletePlayerAccountServiceResult
 {
     public DeletePlayerAccountStatus Status { get; set; }
     public DeletePlayerAccountResponseDto? Response { get; set; }
+}
+
+public enum UploadPlayerAvatarStatus
+{
+    Success,
+    NotFound,
+    ETagMismatch,
+    InvalidData,
+}
+
+public class UploadPlayerAvatarServiceResult
+{
+    public UploadPlayerAvatarStatus Status { get; set; }
+    public UpdatePlayerProfileResponseDto? Response { get; set; }
+    public string? ETag { get; set; }
+    public string? Details { get; set; }
 }

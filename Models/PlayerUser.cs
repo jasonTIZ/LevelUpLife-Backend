@@ -12,6 +12,8 @@ public class PlayerUser{
   public DateTime? LastLogin { get; set; }
   public DateTime CreationDate { get; set; }
   public bool IsActive { get; set; }
+  public string? Bio { get; set; }
+  public string? AvatarUrl { get; set; }
 
   public PlayerUser(){
     this.Id = 0;

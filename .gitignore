@@ -5,3 +5,4 @@ appsettings.Development.json
 appsettings.Development.example.json
 appsettings.json
 cookies.txt
+uploads/

@@ -34,6 +34,15 @@ public class GetPlayerProfileResponseDto
     [JsonPropertyName("PlayerUserLastLogin")]
     public DateTime? PlayerUserLastLogin { get; set; }
 
+    [JsonPropertyName("PlayerUserCreationDate")]
+    public DateTime PlayerUserCreationDate { get; set; }
+
+    [JsonPropertyName("bio")]
+    public string? Bio { get; set; }
+
+    [JsonPropertyName("avatarUrl")]
+    public string? AvatarUrl { get; set; }
+
     [JsonPropertyName("PersonData")]
     public GetPlayerProfilePersonDataDto PersonData { get; set; } = new();
 }

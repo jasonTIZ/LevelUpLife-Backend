@@ -16,6 +16,9 @@ public class PlayerProfileDto
     public DateTime? LastLogin { get; set; }
     public int ClassId { get; set; }
     public string ClassName { get; set; } = string.Empty;
+    public string? Bio { get; set; }
+    public string? AvatarUrl { get; set; }
+    public DateTime CreationDate { get; set; }
     public PersonProfileDto Person { get; set; } = new();
 }
 

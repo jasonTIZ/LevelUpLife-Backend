@@ -93,6 +93,14 @@ builder.Services.Configure<LevelUpLifeBackend.Infrastructure.Configuration.Level
 
 builder.Services.AddSingleton<ILevelProgressService, LevelProgressService>();
 
+builder.Services.Configure<LevelUpLifeBackend.Infrastructure.Configuration.PlayerProfileOptions>(
+    builder.Configuration.GetSection(
+        LevelUpLifeBackend.Infrastructure.Configuration.PlayerProfileOptions.SectionName
+    )
+);
+
+builder.Services.AddScoped<IAvatarStorageService, LocalAvatarStorageService>();
+
 // Services and Repositories of Habit Category
 builder.Services.AddScoped<IHabitCategoryRepository, HabitCategoryRepository>();
 builder.Services.AddScoped<IHabitCategoryService, HabitCategoryService>();
@@ -156,6 +164,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 var app = builder.Build();
 
+var avatarStoragePath = Path.Combine(
+    app.Environment.ContentRootPath,
+    builder.Configuration.GetSection("PlayerProfile:AvatarStoragePath").Value ?? "uploads/avatars");
+Directory.CreateDirectory(avatarStoragePath);
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -164,6 +177,13 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(
+        Path.Combine(app.Environment.ContentRootPath, "uploads")),
+    RequestPath = "/uploads",
+});
 
 // IMPORTANTE: Authentication va ANTES que Authorization.
 app.UseAuthentication();
