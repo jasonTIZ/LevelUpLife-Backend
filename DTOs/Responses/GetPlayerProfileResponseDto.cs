@@ -25,6 +25,9 @@ public class GetPlayerProfileResponseDto
     [JsonPropertyName("levelProgressPercent")]
     public double LevelProgressPercent { get; set; }
 
+    [JsonPropertyName("daysStreak")]
+    public int DaysStreak { get; set; }
+
     [JsonPropertyName("levelingConfig")]
     public LevelingConfigDto LevelingConfig { get; set; } = new();
 
