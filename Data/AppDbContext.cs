@@ -101,6 +101,8 @@ public class AppDbContext : DbContext
             entity.Property(e => e.LastLogin).HasColumnName("FEC_PLAYER_USER_LAST_LOGIN");
             entity.Property(e => e.CreationDate).HasColumnName("FEC_PLAYER_USER_CREATION_DATE");
             entity.Property(e => e.IsActive).HasColumnName("STATUS_PLAYER_USER_IS_ACTIVE");
+            entity.Property(e => e.Bio).HasColumnName("DSC_PLAYER_USER_BIO").HasMaxLength(500);
+            entity.Property(e => e.AvatarUrl).HasColumnName("DSC_PLAYER_USER_AVATAR_URL").HasMaxLength(500);
         });
 
         // ==========================================================

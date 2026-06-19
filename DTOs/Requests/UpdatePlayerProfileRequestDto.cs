@@ -29,6 +29,9 @@ public class PlayerDataUpdateRequestDto
 
     public int? PreferredClassId { get; set; }
 
+    [StringLength(500)]
+    public string? Bio { get; set; }
+
     // El modelo actual no persiste timezone, pero el contrato la acepta.
     public string? Timezone { get; set; }
 }

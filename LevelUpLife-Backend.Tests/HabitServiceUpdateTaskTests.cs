@@ -1,11 +1,13 @@
 using LevelUpLifeBackend.Data;
 using LevelUpLifeBackend.DTOs.Requests;
+using LevelUpLifeBackend.Infrastructure.Configuration;
 using LevelUpLifeBackend.Infrastructure.Errors;
 using LevelUpLifeBackend.Models;
 using LevelUpLifeBackend.Repositories;
 using LevelUpLifeBackend.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.Extensions.Options;
 using Moq;
 using Xunit;
 
@@ -21,6 +23,16 @@ public class HabitServiceUpdateTaskTests
             .Options;
         return new AppDbContext(options);
     }
+
+    private static ILevelProgressService CreateLevelProgressService() =>
+        new LevelProgressService(
+            Options.Create(
+                new LevelingOptions
+                {
+                    Strategy = LevelingStrategy.EscalatingPercent,
+                    BaseXpPerLevel = 100,
+                    EscalationPercent = 20,
+                }));
 
     private static HabitService CreateService(
         AppDbContext context,
@@ -39,6 +51,7 @@ public class HabitServiceUpdateTaskTests
             criteriaRepo.Object,
             timerRepo.Object,
             streakLogRepo.Object,
+            CreateLevelProgressService(),
             context
         );
     }
@@ -276,6 +289,12 @@ public class HabitServiceUpdateTaskTests
         Assert.Equal(50, task.EarnedXpSnapshot);
         Assert.Equal(50, result.XpEarned);
         Assert.Equal(1, result.NewLevel);
+        Assert.Equal(1, result.PreviousLevel);
+        Assert.False(result.LeveledUp);
+        Assert.Equal(50, result.TotalExperiencePoints);
+        Assert.Equal(50, result.ExperiencePointsInCurrentLevel);
+        Assert.Equal(100, result.ExperiencePointsRequiredForNextLevel);
+        Assert.Equal(0.5, result.LevelProgressPercent);
         Assert.True(result.StreakUpdated);
         Assert.Equal(50, task.Habit!.User.ExperiencePoints);
         taskRepo.Verify(
@@ -415,7 +434,13 @@ public class HabitServiceUpdateTaskTests
         );
 
         Assert.Equal(2, result.NewLevel);
+        Assert.Equal(1, result.PreviousLevel);
+        Assert.True(result.LeveledUp);
         Assert.Equal(100, result.XpEarned);
+        Assert.Equal(150, result.TotalExperiencePoints);
+        Assert.Equal(50, result.ExperiencePointsInCurrentLevel);
+        Assert.Equal(100, result.ExperiencePointsRequiredForNextLevel);
+        Assert.Equal(0.5, result.LevelProgressPercent);
     }
 
     [Fact]

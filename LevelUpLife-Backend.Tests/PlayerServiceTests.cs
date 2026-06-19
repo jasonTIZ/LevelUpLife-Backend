@@ -1,6 +1,8 @@
+using LevelUpLifeBackend.Infrastructure.Configuration;
 using LevelUpLifeBackend.Models;
 using LevelUpLifeBackend.Repositories;
 using LevelUpLifeBackend.Services;
+using Microsoft.Extensions.Options;
 using Moq;
 using Xunit;
 
@@ -14,7 +16,19 @@ public class PlayerServiceTests
     public PlayerServiceTests()
     {
         _playerRepositoryMock = new Mock<IPlayerRepository>();
-        _playerService = new PlayerService(_playerRepositoryMock.Object);
+        var avatarStorageMock = new Mock<IAvatarStorageService>();
+        _playerService = new PlayerService(
+            _playerRepositoryMock.Object,
+            new LevelProgressService(
+                Options.Create(
+                    new LevelingOptions
+                    {
+                        Strategy = LevelingStrategy.EscalatingPercent,
+                        BaseXpPerLevel = 100,
+                        EscalationPercent = 20,
+                    })),
+            avatarStorageMock.Object,
+            Options.Create(new PlayerProfileOptions()));
     }
 
     [Fact]
@@ -92,6 +106,8 @@ public class PlayerServiceTests
             Id = 1,
             UserName = "testuser",
             Level = 5,
+            ExperiencePoints = 464,
+            CreationDate = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
             IsActive = true,
             LastLogin = lastLogin,
             Person = new Person

@@ -4,7 +4,7 @@ Documento de entrega para revisión de **Adam** (y QA). Describe la implementaci
 
 **Rama de trabajo:** `feature/29-habit-task-xp-and-streak` (basada en `dev` con #28 mergeado).
 
-**Estado tests:** `60/60` pasando (`dotnet test` en `LevelUpLife-Backend.Tests`).
+**Estado tests:** `68/68` pasando (`dotnet test` en `LevelUpLife-Backend.Tests`).
 
 **Fuera de alcance en esta rama:** Bloque D (claim de recompensas), seed de catálogo, `GET /api/player/events` — lo implementará el equipo de recompensas.
 
@@ -18,14 +18,14 @@ Documento de entrega para revisión de **Adam** (y QA). Describe la implementaci
 |----------|---------|
 | **Endpoint** | `PATCH /api/habit-tasks/{id}/complete` |
 | **Body** | `{ "completedAt": "<ISO 8601 UTC>" }` |
-| **200 OK** | `{ "xpEarned": int, "newLevel": int, "streakUpdated": bool }` |
+| **200 OK** | `{ "xpEarned", "previousLevel", "newLevel", "totalExperiencePoints", "experiencePointsInCurrentLevel", "experiencePointsRequiredForNextLevel", "levelProgressPercent", "leveledUp", "streakUpdated", "daysStreak", "levelingConfig" }` (campos legacy `xpEarned`, `newLevel`, `streakUpdated` se mantienen) |
 | **400** | `COMPLETION_REQUIREMENTS_NOT_MET` (`TaskError`) |
 | **404** | `TASK_NOT_FOUND` / hábito inactivo |
 | **500** | error genérico |
 
 Comportamientos #29 que siguen vigentes:
 
-- Completar otorga `xpEarned` y recalcula `newLevel` (`level = max(1, 1 + XP/100)`).
+- Completar otorga `xpEarned` y recalcula `newLevel` con **umbrales progresivos** (estrategia `EscalatingPercent`, ver §11).
 - No hay doble XP/racha al repetir la misma tarea → **400**.
 - `streakUpdated: true` solo en la **primera completion del día** (UTC); otras tareas del mismo día → `streakUpdated: false`.
 - La racha inicia en **1** (no en 0) y se persiste en `LULH_STREAK_LOG`.
@@ -363,22 +363,23 @@ Alineado con patrones #27–#28 (Adam):
 | Persistencia transaccional complete | `HabitTaskRepository.CompleteTaskAsync` (streak log + eventos en la misma transacción) |
 | Protección de racha | `StreakService` + `StreakController` (log + evento en la misma transacción) |
 | Eventos internos | `PlayerEventRepository` + registro desde `HabitService` / `StreakService` |
-| Mapeo XP/nivel/response | `PlayerProgressMapper` |
+| Mapeo XP/nivel/response | `LevelProgressService` + `PlayerProgressMapper` (XP/racha) |
 
 **Auth endpoints nuevos:** solo JWT (`[Authorize]` + `ResolveAuthenticatedUserId` desde claims). No `X-User-Id`.
 
-**Configuración:** `appsettings.json` → sección `StreakProtection:MaxPerMonth` (default 3).
+**Configuración:** `appsettings.json` → `StreakProtection:MaxPerMonth` (default 3), `Leveling` (issue #89).
 
 ---
 
-## 6. Suite de tests (60)
+## 6. Suite de tests (68)
 
 | Archivo | Qué cubre |
 |---------|-----------|
 | `HabitServiceUpdateTaskTests` | Complete #29, level-up, validaciones, PUT preserva completion |
 | `StreakCalculatorTests` | Gap 1 día, reinicio, salvavidas, hueco 4 días |
 | `StreakProtectionTypeParserTests` | Tipos válidos/inválidos de protección |
-| `PlayerProgressMapperTests` | XP por dificultad, nivel |
+| `LevelProgressServiceTests` | Umbrales progresivos, progreso parcial, complete response |
+| `PlayerProgressMapperTests` | XP por dificultad |
 
 Ejecutar:
 
@@ -488,7 +489,73 @@ Scripts/
 - Notificaciones push / recordatorios (solo datos en `LULH_PLAYER_EVENT`).
 - Tienda / gasto de oro (`CostGold`).
 - Panel admin, ranking, pagos, i18n, despliegue.
+- Estrategia Fibonacci para niveles (futuro; hoy solo `EscalatingPercent`).
 
 ---
 
-*Última actualización: eventos en transacción con complete/protection; validación de tipo de protección con envelope unificado; 60 tests.*
+## 11. Issue #89 — Umbrales progresivos de XP por nivel
+
+**Rama:** `feature/89-progressive-xp-leveling`  
+**Fuente de verdad:** `LevelProgressService` (backend). El frontend **no** debe duplicar la fórmula.
+
+### Estrategia configurada (`Leveling` en appsettings)
+
+| Setting | Default | Descripción |
+|---------|---------|-------------|
+| `Strategy` | `EscalatingPercent` | Estrategia activa |
+| `BaseXpPerLevel` | `100` | XP base del salto 1→2 (y 2→3) |
+| `EscalationPercent` | `20` | Incremento por tier desde el nivel 3 |
+
+**Fórmula tier** (XP para pasar de nivel `n` a `n+1`):
+
+```
+xpRequired(1) = baseXp
+xpRequired(n) = round(baseXp * (1 + escalationPercent/100)^(n-2))   para n >= 2
+```
+
+**Ejemplo** (`baseXp=100`, `escalation=20%`):
+
+| Desde nivel | Hacia nivel | XP del tier | XP acumulado mínimo |
+|-------------|-------------|-------------|---------------------|
+| 1 | 2 | 100 | 0 → 100 |
+| 2 | 3 | 100 | 100 → 200 |
+| 3 | 4 | 120 | 200 → 320 |
+| 4 | 5 | 144 | 320 → 464 |
+| 5 | 6 | 173 | 464 → 637 |
+
+### Respuesta extendida — `PATCH /api/habit-tasks/{id}/complete`
+
+Campos **aditivos** (compatibles hacia atrás con #29):
+
+```json
+{
+  "xpEarned": 10,
+  "previousLevel": 3,
+  "newLevel": 3,
+  "totalExperiencePoints": 285,
+  "experiencePointsInCurrentLevel": 85,
+  "experiencePointsRequiredForNextLevel": 120,
+  "levelProgressPercent": 0.7083,
+  "leveledUp": false,
+  "streakUpdated": true,
+  "daysStreak": 2,
+  "levelingConfig": {
+    "strategy": "escalating_percent",
+    "baseXpPerLevel": 100,
+    "escalationPercent": 20
+  }
+}
+```
+
+### Login y perfil
+
+- `POST /api/auth/login` → `data.levelProgress` + `data.levelingConfig`
+- `GET /api/player/profile` → campos de progreso en el tier actual
+
+### Jugadores existentes
+
+Al completar una tarea, `Level` se recalcula desde `ExperiencePoints` con la nueva fórmula (no la lineal `1 + XP/100`).
+
+---
+
+*Última actualización: issue #89 — umbrales progresivos de XP, progreso en complete/login/profile.*

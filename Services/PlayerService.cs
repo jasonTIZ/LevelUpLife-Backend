@@ -2,18 +2,31 @@ using System.Security.Cryptography;
 using System.Text;
 using LevelUpLifeBackend.DTOs.Requests;
 using LevelUpLifeBackend.DTOs.Responses;
+using LevelUpLifeBackend.Infrastructure;
+using LevelUpLifeBackend.Infrastructure.Configuration;
 using LevelUpLifeBackend.Models;
 using LevelUpLifeBackend.Repositories;
+using Microsoft.Extensions.Options;
 
 namespace LevelUpLifeBackend.Services;
 
 public class PlayerService : IPlayerService
 {
     private readonly IPlayerRepository _playerRepository;
+    private readonly ILevelProgressService _levelProgressService;
+    private readonly IAvatarStorageService _avatarStorageService;
+    private readonly PlayerProfileOptions _profileOptions;
 
-    public PlayerService(IPlayerRepository playerRepository)
+    public PlayerService(
+        IPlayerRepository playerRepository,
+        ILevelProgressService levelProgressService,
+        IAvatarStorageService avatarStorageService,
+        IOptions<PlayerProfileOptions> profileOptions)
     {
         _playerRepository = playerRepository;
+        _levelProgressService = levelProgressService;
+        _avatarStorageService = avatarStorageService;
+        _profileOptions = profileOptions.Value;
     }
 
     public async Task<GetPlayerProfileServiceResult> GetProfileAsync(int playerUserId)
@@ -93,6 +106,21 @@ public class PlayerService : IPlayerService
             player.Class = selectedClass;
         }
 
+        if (request.PlayerData?.Bio is not null)
+        {
+            var bio = request.PlayerData.Bio.Trim();
+            if (bio.Length > _profileOptions.MaxBioLength)
+            {
+                return new UpdatePlayerProfileServiceResult
+                {
+                    Status = UpdatePlayerProfileStatus.InvalidData,
+                    Details = $"La bio no puede superar {_profileOptions.MaxBioLength} caracteres."
+                };
+            }
+
+            player.Bio = bio.Length == 0 ? null : bio;
+        }
+
         if (request.PersonData is not null)
         {
             if (request.PersonData.Name is not null)
@@ -122,6 +150,82 @@ public class PlayerService : IPlayerService
         };
     }
 
+    public async Task<UploadPlayerAvatarServiceResult> UploadAvatarAsync(
+        int playerUserId,
+        string ifMatchHeader,
+        Stream avatarContent,
+        string contentType,
+        long contentLength)
+    {
+        var player = await _playerRepository.GetActiveByIdWithRelationsAsync(playerUserId);
+        if (player is null)
+        {
+            return new UploadPlayerAvatarServiceResult { Status = UploadPlayerAvatarStatus.NotFound };
+        }
+
+        var currentETag = GenerateETag(player);
+        if (!ETagMatches(ifMatchHeader, currentETag))
+        {
+            return new UploadPlayerAvatarServiceResult
+            {
+                Status = UploadPlayerAvatarStatus.ETagMismatch,
+                ETag = currentETag
+            };
+        }
+
+        if (contentLength <= 0)
+        {
+            return InvalidAvatarUpload("Debe enviar un archivo de imagen.");
+        }
+
+        if (contentLength > _profileOptions.MaxAvatarBytes)
+        {
+            return InvalidAvatarUpload(
+                $"La imagen supera el tamaño máximo permitido ({_profileOptions.MaxAvatarBytes} bytes).");
+        }
+
+        if (!AvatarContentTypeValidator.IsAllowedContentType(
+                contentType,
+                _profileOptions.AllowedAvatarContentTypes))
+        {
+            return InvalidAvatarUpload(
+                "Tipo de imagen no permitido. Use JPEG, PNG o WEBP.");
+        }
+
+        if (!AvatarContentTypeValidator.HasValidSignature(avatarContent, contentType))
+        {
+            return InvalidAvatarUpload("El contenido del archivo no coincide con el tipo declarado.");
+        }
+
+        var extension = AvatarContentTypeValidator.ResolveExtension(contentType);
+        if (string.IsNullOrEmpty(extension))
+        {
+            return InvalidAvatarUpload("Tipo de imagen no permitido. Use JPEG, PNG o WEBP.");
+        }
+
+        await _avatarStorageService.DeleteAvatarIfExistsAsync(player.AvatarUrl);
+        var avatarUrl = await _avatarStorageService.SaveAvatarAsync(
+            playerUserId,
+            avatarContent,
+            contentType,
+            extension);
+
+        player.AvatarUrl = avatarUrl;
+        await _playerRepository.SaveChangesAsync();
+
+        return new UploadPlayerAvatarServiceResult
+        {
+            Status = UploadPlayerAvatarStatus.Success,
+            Response = new UpdatePlayerProfileResponseDto
+            {
+                Success = true,
+                Message = "Avatar actualizado correctamente",
+                Player = MapToProfileDto(player)
+            },
+            ETag = GenerateETag(player)
+        };
+    }
+
     public async Task<DeletePlayerAccountServiceResult> DeleteAccountAsync(int playerUserId, string? reason)
     {
         var player = await _playerRepository.GetByIdWithRelationsAsync(playerUserId);
@@ -133,7 +237,6 @@ public class PlayerService : IPlayerService
             };
         }
 
-        // Si la cuenta ya está inactiva, rechazamos la operación.
         if (!player.IsActive)
         {
             return new DeletePlayerAccountServiceResult
@@ -162,18 +265,35 @@ public class PlayerService : IPlayerService
         };
     }
 
+    private UploadPlayerAvatarServiceResult InvalidAvatarUpload(string details) =>
+        new()
+        {
+            Status = UploadPlayerAvatarStatus.InvalidData,
+            Details = details,
+        };
+
     private static DateTime? NormalizeLastLogin(DateTime? lastLogin) =>
         lastLogin is { Year: > 1 } ? lastLogin : null;
 
-    private static GetPlayerProfileResponseDto MapToGetProfileResponse(PlayerUser player)
+    private GetPlayerProfileResponseDto MapToGetProfileResponse(PlayerUser player)
     {
+        var levelProgress = _levelProgressService.GetLevelProgress(player.ExperiencePoints);
+
         return new GetPlayerProfileResponseDto
         {
             PlayerUserId = player.Id.ToString(),
             PlayerUserUserName = player.UserName,
-            PlayerUserLevel = player.Level,
+            PlayerUserLevel = levelProgress.CurrentLevel,
             StatusIsActive = player.IsActive,
             PlayerUserLastLogin = NormalizeLastLogin(player.LastLogin),
+            PlayerUserCreationDate = player.CreationDate,
+            Bio = player.Bio,
+            AvatarUrl = player.AvatarUrl,
+            TotalExperiencePoints = levelProgress.TotalExperiencePoints,
+            ExperiencePointsInCurrentLevel = levelProgress.ExperiencePointsInCurrentLevel,
+            ExperiencePointsRequiredForNextLevel = levelProgress.ExperiencePointsRequiredForNextLevel,
+            LevelProgressPercent = levelProgress.LevelProgressPercent,
+            LevelingConfig = _levelProgressService.GetLevelingConfig(),
             PersonData = new GetPlayerProfilePersonDataDto
             {
                 Name = player.Person.Name,
@@ -184,17 +304,22 @@ public class PlayerService : IPlayerService
         };
     }
 
-    private static PlayerProfileDto MapToProfileDto(PlayerUser player)
+    private PlayerProfileDto MapToProfileDto(PlayerUser player)
     {
+        var levelProgress = _levelProgressService.GetLevelProgress(player.ExperiencePoints);
+
         return new PlayerProfileDto
         {
             Id = player.Id,
             UserName = player.UserName,
-            Level = player.Level,
+            Level = levelProgress.CurrentLevel,
             IsActive = player.IsActive,
             LastLogin = NormalizeLastLogin(player.LastLogin),
             ClassId = player.Class.Id,
             ClassName = player.Class.Name,
+            Bio = player.Bio,
+            AvatarUrl = player.AvatarUrl,
+            CreationDate = player.CreationDate,
             Person = new PersonProfileDto
             {
                 Id = player.Person.Id,
@@ -223,7 +348,10 @@ public class PlayerService : IPlayerService
             player.Person.LastName,
             player.Person.Email,
             player.Person.BirthDate?.ToString("yyyy-MM-dd") ?? "",
-            player.Person.IsActive
+            player.Person.IsActive,
+            player.Bio ?? "",
+            player.AvatarUrl ?? "",
+            player.CreationDate.ToUniversalTime().ToString("O")
         );
 
         var hashBytes = SHA256.HashData(Encoding.UTF8.GetBytes(canonical));
