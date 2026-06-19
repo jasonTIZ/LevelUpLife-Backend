@@ -1,18 +1,18 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
 namespace LevelUpLifeBackend.DTOs.Requests;
 
 public class CreateEvidenceRequestDto : IValidatableObject
 {
-    [JsonPropertyName("DSC_EVIDENCE_PATH_URL")]
+    [JsonPropertyName("url")]
     public string? EvidencePathUrl { get; set; }
 
-    [JsonPropertyName("DSC_HEALTH_DATA_JSON")]
+    [JsonPropertyName("healthDataJson")]
     public string? HealthDataJson { get; set; }
 
-    [Required(ErrorMessage = "FEC_UPLOADED is required.")]
-    [JsonPropertyName("FEC_UPLOADED")]
+    [Required(ErrorMessage = "uploadedAt is required.")]
+    [JsonPropertyName("uploadedAt")]
     public DateTime? UploadedAt { get; set; }
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
@@ -20,7 +20,7 @@ public class CreateEvidenceRequestDto : IValidatableObject
         if (string.IsNullOrWhiteSpace(EvidencePathUrl) && string.IsNullOrWhiteSpace(HealthDataJson))
         {
             yield return new ValidationResult(
-                "Either DSC_EVIDENCE_PATH_URL or DSC_HEALTH_DATA_JSON must be provided.",
+                "Either url or healthDataJson must be provided.",
                 [nameof(EvidencePathUrl), nameof(HealthDataJson)]
             );
         }
