@@ -52,7 +52,9 @@ public class EvidenceUploadController : ControllerBase
             });
         }
 
-        var evidencesDir = Path.Combine(_environment.WebRootPath, "evidences");
+        var webRoot = _environment.WebRootPath
+            ?? Path.Combine(_environment.ContentRootPath, "wwwroot");
+        var evidencesDir = Path.Combine(webRoot, "evidences");
         Directory.CreateDirectory(evidencesDir);
 
         var fileName = $"{Guid.NewGuid():N}{extension.ToLowerInvariant()}";
