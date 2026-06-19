@@ -10,7 +10,7 @@
   <ItemGroup>
     <!-- Proyecto de pruebas vive en subcarpeta; no debe compilarse como parte del host web. -->
     <Compile Remove="LevelUpLife-Backend.Tests/**/*.cs" />
-    <None Include="LevelUpLife-Backend.Tests/**/*" />
+    <None Include="LevelUpLife-Backend.Tests/**/*" Exclude="LevelUpLife-Backend.Tests/bin/**;LevelUpLife-Backend.Tests/obj/**" />
   </ItemGroup>
 
   <ItemGroup>

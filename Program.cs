@@ -2,6 +2,7 @@ using System.Text;
 using LevelUpLifeBackend.Data;
 using LevelUpLifeBackend.Models;
 using Npgsql.NameTranslation;
+using LevelUpLifeBackend.Infrastructure.Ai;
 using LevelUpLifeBackend.Infrastructure.Errors;
 using LevelUpLifeBackend.Infrastructure.Http;
 using LevelUpLifeBackend.Infrastructure.Http.Context;
@@ -116,6 +117,22 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IPlayerRepository, PlayerRepository>();
 builder.Services.AddScoped<IPlayerService, PlayerService>();
 
+// AI chatbot — forwards requests to the external LLM gateway.
+// Configure gateway URL and API key via Ai:BaseUrl and Ai:ApiKey in appsettings.
+builder.Services.Configure<AiOptions>(builder.Configuration.GetSection(AiOptions.SectionName));
+builder.Services.AddScoped<IAiChatService, AiChatService>();
+
+var aiSection = builder.Configuration.GetSection(AiOptions.SectionName);
+var aiApiKey  = GetRequiredSetting(builder.Configuration, $"{AiOptions.SectionName}:ApiKey");
+var aiBaseUrl = GetRequiredSetting(builder.Configuration, $"{AiOptions.SectionName}:BaseUrl");
+
+builder.Services.AddHttpClient<IAiProvider, GatewayAiProvider>(client =>
+{
+    client.BaseAddress = new Uri(aiBaseUrl.TrimEnd('/') + "/");
+    // Gateway authenticates via x-api-key header.
+    client.DefaultRequestHeaders.Add("x-api-key", aiApiKey);
+});
+
 // HTTP base client infrastructure (Issue #45)
 builder.Services.Configure<BaseHttpClientOptions>(
     builder.Configuration.GetSection(BaseHttpClientOptions.SectionName)
@@ -175,6 +192,8 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
     app.MapScalarApiReference();
 }
+
+app.UseStaticFiles();
 
 app.UseHttpsRedirection();
 
