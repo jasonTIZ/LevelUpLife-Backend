@@ -588,7 +588,29 @@ public class HabitService : IHabitService
                 }
             }
 
-            _context.Entry(existingHabit).Property("DisciplineId").CurrentValue = dto.DisciplineId;
+            if (dto.NewTasks is not null)
+            {
+                foreach (var newTaskDto in dto.NewTasks)
+                {
+                    var newTask = await _habitTaskRepository.AddAsync(
+                        HabitTaskMapper.ToEntity(newTaskDto, existingHabit.Id, existingHabit.Discipline.Id)
+                    );
+
+                    if (newTaskDto.CompletionCriteria == TaskCompletionCriteria.REPETITIONS)
+                    {
+                        await _repetitionCriteriaRepository.AddAsync(
+                            RepetitionCriteriaMapper.ToEntity(newTask.Id, newTaskDto.RepetitionCriteria!)
+                        );
+                    }
+
+                    if (newTaskDto.CompletionCriteria == TaskCompletionCriteria.TIMER)
+                    {
+                        await _timerCriteriaRepository.AddAsync(
+                            TimerCriteriaMapper.ToEntity(newTask.Id, newTaskDto.TimerCriteria!)
+                        );
+                    }
+                }
+            }
 
             await _habitRepository.UpdateHabitAsync(existingHabit);
 
