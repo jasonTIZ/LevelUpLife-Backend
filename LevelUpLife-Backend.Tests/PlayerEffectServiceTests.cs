@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Options;
 using Moq;
+using System.Threading;
 using Xunit;
 
 namespace LevelUpLife_Backend.Tests;
@@ -175,6 +176,11 @@ public class HabitServiceRewardEffectsTests
             .Setup(r => r.CompleteTaskAsync(task, It.IsAny<StreakLog?>(), It.IsAny<IReadOnlyList<PlayerEvent>?>()))
             .Returns(Task.CompletedTask);
 
+        var aiDifficulty = new Mock<IAiDifficultyService>();
+        aiDifficulty
+            .Setup(s => s.ClassifyAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AiDifficultyResult(TaskDifficulty.MEDIUM, false));
+
         var service = new HabitService(
             new Mock<IHabitRepository>().Object,
             taskRepo.Object,
@@ -183,6 +189,7 @@ public class HabitServiceRewardEffectsTests
             streakRepo.Object,
             CreateLevelProgressService(),
             effectService,
+            aiDifficulty.Object,
             context);
 
         var response = await service.CompleteTaskAsync(

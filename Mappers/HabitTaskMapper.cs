@@ -16,7 +16,7 @@ public static class HabitTaskMapper
         task.Title = request.Title.Trim();
         task.Description = request.Description;
         task.WeekDays = request.WeekDays;
-        task.Difficulty = request.Difficulty!.Value;
+        task.Difficulty = request.Difficulty ?? task.Difficulty;
         task.XpValue = request.XpValue ?? 0;
         task.Frequency = request.Frequency!.Value;
         task.PeriodLength = request.PeriodLength ?? 1;
@@ -77,7 +77,7 @@ public static class HabitTaskMapper
             Title = dto.Title,
             Description = dto.Description,
             WeekDays = dto.WeekDays,
-            Difficulty = dto.Difficulty!.Value,
+            Difficulty = dto.Difficulty ?? TaskDifficulty.MEDIUM,
             XpValue = dto.XpValue ?? 0,
             Frequency = dto.Frequency!.Value,
             PeriodLength = dto.PeriodLength!.Value,
@@ -102,7 +102,7 @@ public static class HabitTaskMapper
             Title = dto.Title.Trim(),
             Description = dto.Description,
             WeekDays = dto.WeekDays,
-            Difficulty = dto.Difficulty!.Value,
+            Difficulty = dto.Difficulty ?? TaskDifficulty.MEDIUM,
             XpValue = dto.XpValue ?? 0,
             Frequency = dto.Frequency!.Value,
             PeriodLength = dto.PeriodLength ?? 1,

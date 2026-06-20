@@ -127,6 +127,7 @@ builder.Services.AddScoped<IPlayerService, PlayerService>();
 // Configure gateway URL and API key via Ai:BaseUrl and Ai:ApiKey in appsettings.
 builder.Services.Configure<AiOptions>(builder.Configuration.GetSection(AiOptions.SectionName));
 builder.Services.AddScoped<IAiChatService, AiChatService>();
+builder.Services.AddScoped<IAiDifficultyService, AiDifficultyService>();
 
 var aiSection = builder.Configuration.GetSection(AiOptions.SectionName);
 var aiApiKey  = GetRequiredSetting(builder.Configuration, $"{AiOptions.SectionName}:ApiKey");

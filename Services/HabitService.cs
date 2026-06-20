@@ -18,6 +18,7 @@ public class HabitService : IHabitService
     private readonly IStreakLogRepository _streakLogRepository;
     private readonly ILevelProgressService _levelProgressService;
     private readonly IPlayerEffectService _playerEffectService;
+    private readonly IAiDifficultyService _aiDifficultyService;
     private readonly AppDbContext _context;
 
     public HabitService(
@@ -28,6 +29,7 @@ public class HabitService : IHabitService
         IStreakLogRepository streakLogRepository,
         ILevelProgressService levelProgressService,
         IPlayerEffectService playerEffectService,
+        IAiDifficultyService aiDifficultyService,
         AppDbContext context)
     {
         _habitRepository = habitRepository;
@@ -37,6 +39,7 @@ public class HabitService : IHabitService
         _streakLogRepository = streakLogRepository;
         _levelProgressService = levelProgressService;
         _playerEffectService = playerEffectService;
+        _aiDifficultyService = aiDifficultyService;
         _context = context;
     }
 
@@ -47,12 +50,16 @@ public class HabitService : IHabitService
         {
             var habit = await _habitRepository.AddAsync(HabitMapper.ToEntity(request));
 
+            var aiDifficultyFailed = false;
             var taskResponses = new List<HabitTaskResponseDto>();
             foreach (var taskDto in request.Tasks)
             {
-                var task = await _habitTaskRepository.AddAsync(
-                    HabitTaskMapper.ToEntity(taskDto, habit.Id, habit.Discipline.Id)
-                );
+                var difficultyResult = await _aiDifficultyService.ClassifyAsync(taskDto.Title, taskDto.Description);
+                aiDifficultyFailed |= difficultyResult.AiFailed;
+
+                var taskEntity = HabitTaskMapper.ToEntity(taskDto, habit.Id, habit.Discipline.Id);
+                taskEntity.Difficulty = difficultyResult.Difficulty;
+                var task = await _habitTaskRepository.AddAsync(taskEntity);
                 RepetitionCriteria? criteria = null;
                 if (taskDto.CompletionCriteria == TaskCompletionCriteria.REPETITIONS)
                 {
@@ -85,6 +92,7 @@ public class HabitService : IHabitService
 
             var response = HabitMapper.ToResponse(habit);
             response.Tasks = taskResponses;
+            response.AiDifficultyFailed = aiDifficultyFailed;
             return response;
         }
         catch
@@ -112,6 +120,8 @@ public class HabitService : IHabitService
             );
         }
 
+        var difficultyResult = await _aiDifficultyService.ClassifyAsync(request.Title, request.Description);
+
         await using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
@@ -122,7 +132,7 @@ public class HabitService : IHabitService
                 Title = request.Title.Trim(),
                 Description = request.Description,
                 WeekDays = request.WeekDays,
-                Difficulty = request.Difficulty!.Value,
+                Difficulty = difficultyResult.Difficulty,
                 XpValue = request.XpValue ?? 0,
                 Frequency = request.Frequency!.Value,
                 PeriodLength = request.PeriodLength ?? 1,
@@ -154,6 +164,7 @@ public class HabitService : IHabitService
 
             var created = await _habitTaskRepository.GetByIdWithCriteriaAsync(task.Id);
             var response = HabitTaskMapper.ToResponse(created ?? task);
+            response.AiDifficultyFailed = difficultyResult.AiFailed;
             if (criteria is not null)
             {
                 response.RepetitionCriteria = RepetitionCriteriaMapper.ToResponse(criteria);
@@ -217,6 +228,9 @@ public class HabitService : IHabitService
 
         HabitTaskMapper.ApplyStandaloneRequest(request, task, task.Habit.Discipline.Id);
 
+        var difficultyResult = await _aiDifficultyService.ClassifyAsync(request.Title, request.Description);
+        task.Difficulty = difficultyResult.Difficulty;
+
         if (request.CompletionCriteria == TaskCompletionCriteria.REPETITIONS)
         {
             if (task.RepetitionCriteria is null)
@@ -247,7 +261,9 @@ public class HabitService : IHabitService
 
         await _habitTaskRepository.UpdateWithRepetitionCriteriaAsync(task);
 
-        return HabitTaskMapper.ToResponse(task);
+        var updateResponse = HabitTaskMapper.ToResponse(task);
+        updateResponse.AiDifficultyFailed = difficultyResult.AiFailed;
+        return updateResponse;
     }
 
     public async Task DeactivateTaskAsync(int taskId, int userId)
@@ -635,13 +651,17 @@ public class HabitService : IHabitService
                 }
             }
 
+            var aiDifficultyFailed = false;
             if (dto.NewTasks is not null)
             {
                 foreach (var newTaskDto in dto.NewTasks)
                 {
-                    var newTask = await _habitTaskRepository.AddAsync(
-                        HabitTaskMapper.ToEntity(newTaskDto, existingHabit.Id, existingHabit.Discipline.Id)
-                    );
+                    var difficultyResult = await _aiDifficultyService.ClassifyAsync(newTaskDto.Title, newTaskDto.Description);
+                    aiDifficultyFailed |= difficultyResult.AiFailed;
+
+                    var newTaskEntity = HabitTaskMapper.ToEntity(newTaskDto, existingHabit.Id, existingHabit.Discipline.Id);
+                    newTaskEntity.Difficulty = difficultyResult.Difficulty;
+                    var newTask = await _habitTaskRepository.AddAsync(newTaskEntity);
 
                     if (newTaskDto.CompletionCriteria == TaskCompletionCriteria.REPETITIONS)
                     {
@@ -672,7 +692,9 @@ public class HabitService : IHabitService
                 .Include(h => h.Tasks)
                     .ThenInclude(t => t.TimerCriteria)
                 .FirstOrDefaultAsync(h => h.Id == dto.Id);
-            return HabitMapper.ToResponse(updatedHabit!);
+            var response = HabitMapper.ToResponse(updatedHabit!);
+            response.AiDifficultyFailed = aiDifficultyFailed;
+            return response;
         }
         catch
         {
