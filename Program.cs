@@ -116,6 +116,8 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 // Repositorios y Servicios de Jugador
 builder.Services.AddScoped<IPlayerRepository, PlayerRepository>();
 builder.Services.AddScoped<IPlayerService, PlayerService>();
+builder.Services.AddScoped<IPlayerInventoryRepository, PlayerInventoryRepository>();
+builder.Services.AddScoped<IPlayerInventoryService, PlayerInventoryService>();
 
 // AI chatbot — forwards requests to the external LLM gateway.
 // Configure gateway URL and API key via Ai:BaseUrl and Ai:ApiKey in appsettings.

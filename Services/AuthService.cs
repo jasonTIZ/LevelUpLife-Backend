@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Text;
 using LevelUpLifeBackend.DTOs.Requests;
 using LevelUpLifeBackend.DTOs.Responses;
+using LevelUpLifeBackend.Infrastructure;
 using LevelUpLifeBackend.Models;
 using LevelUpLifeBackend.Repositories;
 using Microsoft.IdentityModel.Tokens;
@@ -50,6 +51,7 @@ public class AuthService : IAuthService
             Class = playerClass,
             Level = 1,
             ExperiencePoints = 0,
+            Gold = PlayerDefaults.InitialGold,
             DaysStreak = 0,
             CreationDate = DateTime.UtcNow,
             IsActive = true

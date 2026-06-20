@@ -28,6 +28,9 @@ public class GetPlayerProfileResponseDto
     [JsonPropertyName("daysStreak")]
     public int DaysStreak { get; set; }
 
+    [JsonPropertyName("gold")]
+    public int Gold { get; set; }
+
     [JsonPropertyName("levelingConfig")]
     public LevelingConfigDto LevelingConfig { get; set; } = new();
 

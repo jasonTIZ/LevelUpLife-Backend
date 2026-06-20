@@ -25,6 +25,7 @@ public class AppDbContext : DbContext
 
     public DbSet<RewardItemType> RewardItemTypes { get; set; }
     public DbSet<RewardItem> RewardItems { get; set; }
+    public DbSet<PlayerInventory> PlayerInventories { get; set; }
     public DbSet<StreakLog> StreakLogs { get; set; }
     public DbSet<PlayerEvent> PlayerEvents { get; set; }
 
@@ -97,6 +98,7 @@ public class AppDbContext : DbContext
             entity.Property(e => e.Password).HasColumnName("DSC_PLAYER_USER_PASSWORD").HasMaxLength(255).IsRequired();
             entity.Property(e => e.Level).HasColumnName("NUM_PLAYER_USER_LEVEL");
             entity.Property(e => e.ExperiencePoints).HasColumnName("NUM_PLAYER_USER_EXPERIENCE_POINTS");
+            entity.Property(e => e.Gold).HasColumnName("NUM_PLAYER_USER_GOLD");
             entity.Property(e => e.DaysStreak).HasColumnName("NUM_PLAYER_USER_DAYS_STREAK");
             entity.Property(e => e.LastLogin).HasColumnName("FEC_PLAYER_USER_LAST_LOGIN");
             entity.Property(e => e.CreationDate).HasColumnName("FEC_PLAYER_USER_CREATION_DATE");
@@ -270,6 +272,30 @@ public class AppDbContext : DbContext
             entity.Property(e => e.CostGold).HasColumnName("NUM_REWARD_ITEM_COST_GOLD");
             entity.Property(e => e.EffectValue).HasColumnName("NUM_REWARD_ITEM_EFFECT_VALUE");
             entity.Property(e => e.IsActive).HasColumnName("STATUS_REWARD_ITEM_IS_ACTIVE");
+        });
+
+        modelBuilder.Entity<PlayerInventory>(entity =>
+        {
+            entity.ToTable("LULT_PLAYER_INVENTORY");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("ID_INVENTORY");
+
+            entity.Property(e => e.PlayerUserId).HasColumnName("ID_PLAYER_USER");
+            entity.HasOne(e => e.PlayerUser)
+                  .WithMany()
+                  .HasForeignKey(e => e.PlayerUserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.Property(e => e.RewardItemId).HasColumnName("ID_REWARD_ITEM");
+            entity.HasOne(e => e.RewardItem)
+                  .WithMany()
+                  .HasForeignKey(e => e.RewardItemId);
+
+            entity.Property(e => e.Quantity).HasColumnName("NUM_INVENTORY_QUANTITY");
+            entity.Property(e => e.IsEquipped).HasColumnName("STATUS_INVENTORY_IS_EQUIPPED");
+            entity.Property(e => e.AcquiredAt).HasColumnName("FEC_ACQUIRED");
+
+            entity.HasIndex(e => e.PlayerUserId).HasDatabaseName("IDX_INVENTORY_PLAYER");
         });
 
         modelBuilder.Entity<StreakLog>(entity =>

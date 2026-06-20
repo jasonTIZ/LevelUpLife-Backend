@@ -294,6 +294,7 @@ public class PlayerService : IPlayerService
             ExperiencePointsRequiredForNextLevel = levelProgress.ExperiencePointsRequiredForNextLevel,
             LevelProgressPercent = levelProgress.LevelProgressPercent,
             DaysStreak = player.DaysStreak,
+            Gold = player.Gold,
             LevelingConfig = _levelProgressService.GetLevelingConfig(),
             PersonData = new GetPlayerProfilePersonDataDto
             {

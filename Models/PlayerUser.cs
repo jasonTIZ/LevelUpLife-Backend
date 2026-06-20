@@ -1,3 +1,5 @@
+using LevelUpLifeBackend.Infrastructure;
+
 namespace LevelUpLifeBackend.Models;
 
 public class PlayerUser{
@@ -8,6 +10,7 @@ public class PlayerUser{
   public string Password { get; set; }
   public int Level { get; set; }
   public int ExperiencePoints { get; set; }
+  public int Gold { get; set; }
   public int DaysStreak { get; set; }
   public DateTime? LastLogin { get; set; }
   public DateTime CreationDate { get; set; }
@@ -23,6 +26,7 @@ public class PlayerUser{
     this.Password = string.Empty;
     this.Level = 0;
     this.ExperiencePoints = 0;
+    this.Gold = PlayerDefaults.InitialGold;
     this.DaysStreak = 0;
     this.LastLogin = null;
     this.CreationDate = new DateTime();

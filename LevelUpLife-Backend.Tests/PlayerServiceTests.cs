@@ -52,6 +52,7 @@ public class PlayerServiceTests
         Assert.Equal("User", result.Response.PersonData.LastName);
         Assert.Equal("test@leveluplife.com", result.Response.PersonData.Email);
         Assert.Equal(new DateOnly(1990, 1, 1), result.Response.PersonData.Birthdate);
+        Assert.Equal(300, result.Response.Gold);
         Assert.False(string.IsNullOrWhiteSpace(result.ETag));
     }
 
@@ -107,6 +108,7 @@ public class PlayerServiceTests
             UserName = "testuser",
             Level = 5,
             ExperiencePoints = 464,
+            Gold = 300,
             CreationDate = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
             IsActive = true,
             LastLogin = lastLogin,
