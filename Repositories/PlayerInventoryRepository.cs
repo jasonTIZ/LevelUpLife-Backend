@@ -32,7 +32,6 @@ public class PlayerInventoryRepository : IPlayerInventoryRepository
 
     public async Task<PlayerInventory> UpdateAsync(PlayerInventory entry)
     {
-        _context.PlayerInventories.Update(entry);
         await _context.SaveChangesAsync();
         return entry;
     }
