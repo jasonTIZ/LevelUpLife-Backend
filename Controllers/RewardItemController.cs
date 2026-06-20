@@ -68,6 +68,48 @@ public class RewardItemController : ControllerBase
         {
             return NotFound(ex.Payload);
         }
+        catch (InventoryError ex)
+        {
+            return StatusCode(ex.HttpStatusCode, ex.Payload);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new ErrorResponse
+            {
+                Code = 500,
+                Message = "An unexpected error occurred.",
+                Details = ex.Message
+            });
+        }
+    }
+
+    [HttpPost("inventory/{inventoryId:int}/activate")]
+    public async Task<IActionResult> Activate(int inventoryId)
+    {
+        var userId = ResolveUserId();
+        if (userId is null)
+        {
+            return Unauthorized(new
+            {
+                code = "UNAUTHORIZED",
+                message = "Unauthorized access.",
+                details = "A valid JWT or X-User-Id header is required.",
+            });
+        }
+
+        try
+        {
+            var result = await _inventoryService.ActivateAsync(userId.Value, inventoryId);
+            return Ok(result);
+        }
+        catch (NotFoundError ex)
+        {
+            return NotFound(ex.Payload);
+        }
+        catch (InventoryError ex)
+        {
+            return StatusCode(ex.HttpStatusCode, ex.Payload);
+        }
         catch (Exception ex)
         {
             return StatusCode(500, new ErrorResponse

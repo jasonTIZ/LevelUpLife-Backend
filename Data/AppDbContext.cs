@@ -28,6 +28,7 @@ public class AppDbContext : DbContext
     public DbSet<StreakLog> StreakLogs { get; set; }
     public DbSet<PlayerEvent> PlayerEvents { get; set; }
     public DbSet<PlayerInventory> PlayerInventories { get; set; }
+    public DbSet<PlayerActiveEffect> PlayerActiveEffects { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -271,6 +272,7 @@ public class AppDbContext : DbContext
             entity.Property(e => e.Description).HasColumnName("DSC_REWARD_ITEM_DESCRIPTION");
             entity.Property(e => e.CostGold).HasColumnName("NUM_REWARD_ITEM_COST_GOLD");
             entity.Property(e => e.EffectValue).HasColumnName("NUM_REWARD_ITEM_EFFECT_VALUE");
+            entity.Property(e => e.DurationDays).HasColumnName("NUM_EFFECT_DURATION_DAYS");
             entity.Property(e => e.IsActive).HasColumnName("STATUS_REWARD_ITEM_IS_ACTIVE");
         });
 
@@ -342,6 +344,41 @@ public class AppDbContext : DbContext
 
             entity.HasIndex(e => e.PlayerUserId);
             entity.HasIndex(e => e.RewardItemId);
+        });
+
+        modelBuilder.Entity<PlayerActiveEffect>(entity =>
+        {
+            entity.ToTable("LULT_PLAYER_ACTIVE_EFFECT");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("ID_PLAYER_ACTIVE_EFFECT");
+
+            entity.Property(e => e.PlayerUserId).HasColumnName("ID_PLAYER_USER");
+            entity.HasOne(e => e.PlayerUser)
+                .WithMany()
+                .HasForeignKey(e => e.PlayerUserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.Property(e => e.InventoryId).HasColumnName("ID_INVENTORY");
+            entity.HasOne(e => e.Inventory)
+                .WithMany()
+                .HasForeignKey(e => e.InventoryId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.Property(e => e.RewardItemId).HasColumnName("ID_REWARD_ITEM");
+            entity.HasOne(e => e.RewardItem)
+                .WithMany()
+                .HasForeignKey(e => e.RewardItemId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.Property(e => e.RewardItemTypeId).HasColumnName("ID_REWARD_ITEM_TYPE");
+            entity.Property(e => e.EffectValue).HasColumnName("NUM_EFFECT_VALUE");
+            entity.Property(e => e.RemainingCharges).HasColumnName("NUM_REMAINING_CHARGES");
+            entity.Property(e => e.ActivatedAt).HasColumnName("FEC_ACTIVATED");
+            entity.Property(e => e.ExpiresAt).HasColumnName("FEC_EXPIRES_AT");
+            entity.Property(e => e.IsActive).HasColumnName("STATUS_IS_ACTIVE");
+
+            entity.HasIndex(e => e.PlayerUserId);
+            entity.HasIndex(e => e.InventoryId);
         });
     }
 }

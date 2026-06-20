@@ -9,5 +9,6 @@ public class RewardItem
     public string? Description { get; set; }
     public int CostGold { get; set; }
     public decimal? EffectValue { get; set; }
+    public int? DurationDays { get; set; }
     public bool IsActive { get; set; }
 }

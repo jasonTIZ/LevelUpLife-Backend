@@ -17,6 +17,7 @@ public class HabitService : IHabitService
     private readonly ITimerCriteriaRepository _timerCriteriaRepository;
     private readonly IStreakLogRepository _streakLogRepository;
     private readonly ILevelProgressService _levelProgressService;
+    private readonly IPlayerEffectService _playerEffectService;
     private readonly IAiDifficultyService _aiDifficultyService;
     private readonly AppDbContext _context;
 
@@ -27,6 +28,7 @@ public class HabitService : IHabitService
         ITimerCriteriaRepository timerCriteriaRepository,
         IStreakLogRepository streakLogRepository,
         ILevelProgressService levelProgressService,
+        IPlayerEffectService playerEffectService,
         IAiDifficultyService aiDifficultyService,
         AppDbContext context)
     {
@@ -36,6 +38,7 @@ public class HabitService : IHabitService
         _timerCriteriaRepository = timerCriteriaRepository;
         _streakLogRepository = streakLogRepository;
         _levelProgressService = levelProgressService;
+        _playerEffectService = playerEffectService;
         _aiDifficultyService = aiDifficultyService;
         _context = context;
     }
@@ -330,21 +333,25 @@ public class HabitService : IHabitService
         await EnsureCompletionRequirementsMetAsync(task, request.CompletedAt);
 
         var player = task.Habit.User;
-        var xpEarned = PlayerProgressMapper.CalculateXpEarned(task);
+        await _playerEffectService.DeactivateExpiredEffectsAsync(player.Id);
+
+        var baseXp = PlayerProgressMapper.CalculateXpEarned(task);
+        var xpMultiplier = await _playerEffectService.GetActiveXpMultiplierAsync(player.Id);
+        var xpEarned = (int)Math.Round(baseXp * xpMultiplier);
         var completionDate = DateOnly.FromDateTime(request.CompletedAt.ToUniversalTime());
 
         task.IsCompleted = true;
         task.EarnedXpSnapshot = xpEarned;
         var previousLevel = _levelProgressService.CalculateLevel(player.ExperiencePoints);
         player.ExperiencePoints += xpEarned;
+        player.Gold += xpEarned;
         player.Level = _levelProgressService.CalculateLevel(player.ExperiencePoints);
 
         var streakResult = await ApplyStreakUpdateAsync(player, completionDate);
         var completionEvents = BuildCompletionEvents(
-            player.Id,
+            player,
             streakResult,
             previousLevel,
-            player.Level,
             completionDate
         );
 
@@ -358,23 +365,39 @@ public class HabitService : IHabitService
             player.DaysStreak);
     }
 
-    private static IReadOnlyList<PlayerEvent> BuildCompletionEvents(
-        int playerUserId,
+    private List<PlayerEvent> BuildCompletionEvents(
+        PlayerUser player,
         StreakUpdateResult streakResult,
         int previousLevel,
-        int newLevel,
         DateOnly completionDate)
     {
         var events = new List<PlayerEvent>();
         var createdAt = DateTime.UtcNow;
+        var newLevel = player.Level;
 
         if (streakResult.Updated && streakResult.WasReset)
         {
             events.Add(new PlayerEvent
             {
-                PlayerUserId = playerUserId,
+                PlayerUserId = player.Id,
                 EventType = PlayerEventType.STREAK_RESET,
-                PayloadJson = $"{{\"date\":\"{completionDate:yyyy-MM-dd}\",\"newStreak\":1}}",
+                PayloadJson =
+                    $"{{\"date\":\"{completionDate:yyyy-MM-dd}\",\"newStreak\":1,\"previousStreak\":{streakResult.PreviousStreakBeforeReset}}}",
+                CreatedAt = createdAt,
+            });
+
+            var xpBeforePenalty = player.ExperiencePoints;
+            var penaltyAmount = _playerEffectService.CalculateXpPenalty(xpBeforePenalty);
+            player.ExperiencePoints = Math.Max(0, xpBeforePenalty - penaltyAmount);
+            player.Level = _levelProgressService.CalculateLevel(player.ExperiencePoints);
+            newLevel = player.Level;
+
+            events.Add(new PlayerEvent
+            {
+                PlayerUserId = player.Id,
+                EventType = PlayerEventType.XP_PENALTY,
+                PayloadJson =
+                    $"{{\"amount\":{penaltyAmount},\"xpBefore\":{xpBeforePenalty},\"xpAfter\":{player.ExperiencePoints},\"reverted\":false}}",
                 CreatedAt = createdAt,
             });
         }
@@ -382,7 +405,7 @@ public class HabitService : IHabitService
         {
             events.Add(new PlayerEvent
             {
-                PlayerUserId = playerUserId,
+                PlayerUserId = player.Id,
                 EventType = PlayerEventType.STREAK_CONTINUED,
                 PayloadJson = $"{{\"date\":\"{completionDate:yyyy-MM-dd}\",\"streak\":{streakResult.NewStreakCount}}}",
                 CreatedAt = createdAt,
@@ -393,7 +416,7 @@ public class HabitService : IHabitService
         {
             events.Add(new PlayerEvent
             {
-                PlayerUserId = playerUserId,
+                PlayerUserId = player.Id,
                 EventType = PlayerEventType.LEVEL_UP,
                 PayloadJson = $"{{\"previousLevel\":{previousLevel},\"newLevel\":{newLevel}}}",
                 CreatedAt = createdAt,
@@ -408,7 +431,8 @@ public class HabitService : IHabitService
         StreakLog? Log,
         bool WasReset,
         bool ContinuedViaProtection,
-        int NewStreakCount
+        int NewStreakCount,
+        int PreviousStreakBeforeReset
     );
 
     private async Task EnsureCompletionRequirementsMetAsync(HabitTask task, DateTime completedAt)
@@ -468,7 +492,7 @@ public class HabitService : IHabitService
         var existingLog = await _streakLogRepository.GetByPlayerAndDateAsync(player.Id, completionDate);
         if (existingLog?.CompletionRecorded == true)
         {
-            return new StreakUpdateResult(false, null, false, false, player.DaysStreak);
+            return new StreakUpdateResult(false, null, false, false, player.DaysStreak, 0);
         }
 
         var lastCompletion = await _streakLogRepository.GetLastCompletionBeforeAsync(
@@ -488,11 +512,22 @@ public class HabitService : IHabitService
                 completionDate
             );
 
+        if (!gapHasProtection && lastCompletion is not null && dayGap > 1)
+        {
+            gapHasProtection = await _playerEffectService.TryConsumeStreakShieldAsync(
+                player.Id,
+                dayGap - 1);
+        }
+
         var (newStreak, wasReset) = StreakCalculator.ComputeStreakCount(
             lastCompletion,
             completionDate,
             gapHasProtection
         );
+
+        var previousStreakBeforeReset = wasReset
+            ? lastCompletion?.StreakCount ?? 0
+            : 0;
 
         player.DaysStreak = Math.Max(1, newStreak);
         var continuedViaProtection = gapHasProtection && !wasReset && dayGap > 1;
@@ -509,7 +544,13 @@ public class HabitService : IHabitService
             log = PlayerProgressMapper.ToStreakLog(player, completionDate);
         }
 
-        return new StreakUpdateResult(true, log, wasReset, continuedViaProtection, player.DaysStreak);
+        return new StreakUpdateResult(
+            true,
+            log,
+            wasReset,
+            continuedViaProtection,
+            player.DaysStreak,
+            previousStreakBeforeReset);
     }
 
     private static void ThrowCompletionRequirementsNotMet(string details)

@@ -13,6 +13,12 @@ public class PlayerRepository : IPlayerRepository
         _context = context;
     }
 
+    public async Task<PlayerUser?> GetActiveByIdAsync(int playerUserId)
+    {
+        return await _context.PlayerUsers
+            .FirstOrDefaultAsync(u => u.Id == playerUserId && u.IsActive);
+    }
+
     public async Task<PlayerUser?> GetActiveByIdWithRelationsAsync(int playerUserId)
     {
         return await _context.PlayerUsers
