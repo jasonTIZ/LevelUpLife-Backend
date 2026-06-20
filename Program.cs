@@ -82,6 +82,8 @@ builder.Services.AddScoped<IRewardItemRepository, RewardItemRepository>();
 builder.Services.AddScoped<IRewardItemService, RewardItemService>();
 builder.Services.AddScoped<IPlayerInventoryRepository, PlayerInventoryRepository>();
 builder.Services.AddScoped<IPlayerInventoryService, PlayerInventoryService>();
+builder.Services.AddScoped<IPlayerActiveEffectRepository, PlayerActiveEffectRepository>();
+builder.Services.AddScoped<IPlayerEffectService, PlayerEffectService>();
 builder.Services.AddScoped<IStreakService, StreakService>();
 
 builder.Services.Configure<LevelUpLifeBackend.Infrastructure.Configuration.StreakProtectionOptions>(

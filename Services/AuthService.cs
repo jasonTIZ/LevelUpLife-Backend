@@ -52,7 +52,8 @@ public class AuthService : IAuthService
             ExperiencePoints = 0,
             DaysStreak = 0,
             CreationDate = DateTime.UtcNow,
-            IsActive = true
+            IsActive = true,
+            Gold = 300,
         };
         await _authRepository.RegisterAsync(person, playerUser);
         return (true, "Usuario registrado exitosamente.");

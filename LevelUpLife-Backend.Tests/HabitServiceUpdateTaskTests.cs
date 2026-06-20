@@ -44,6 +44,16 @@ public class HabitServiceUpdateTaskTests
         var criteriaRepo = new Mock<IRepetitionCriteriaRepository>();
         var timerRepo = new Mock<ITimerCriteriaRepository>();
         var streakLogRepo = streakRepo ?? CreateDefaultStreakRepoMock();
+        var effectService = new Mock<IPlayerEffectService>();
+        effectService
+            .Setup(s => s.GetActiveXpMultiplierAsync(It.IsAny<int>()))
+            .ReturnsAsync(1m);
+        effectService
+            .Setup(s => s.DeactivateExpiredEffectsAsync(It.IsAny<int>()))
+            .Returns(Task.CompletedTask);
+        effectService
+            .Setup(s => s.TryConsumeStreakShieldAsync(It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(false);
 
         return new HabitService(
             habitRepo.Object,
@@ -52,6 +62,7 @@ public class HabitServiceUpdateTaskTests
             timerRepo.Object,
             streakLogRepo.Object,
             CreateLevelProgressService(),
+            effectService.Object,
             context
         );
     }
