@@ -60,7 +60,9 @@ builder.Services.AddDbContext<AppDbContext>(options =>
             .MapEnum<TaskCompletionCriteria>("ENUM_COMPLETION_CRITERIA", nameTranslator: new NpgsqlNullNameTranslator())
             .MapEnum<TaskEvidence>("ENUM_EVIDENCE", nameTranslator: new NpgsqlNullNameTranslator())
     )
-    .ConfigureWarnings(w => w.Ignore(CoreEventId.ManyServiceProvidersCreatedWarning)));
+    .ConfigureWarnings(w => w
+        .Ignore(CoreEventId.ManyServiceProvidersCreatedWarning)
+        .Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)));
 
 // Repositorios y Servicios de Hábitos
 builder.Services.AddScoped<IHabitRepository, HabitRepository>();
@@ -78,6 +80,8 @@ builder.Services.AddScoped<IPlayerEventRepository, PlayerEventRepository>();
 
 builder.Services.AddScoped<IRewardItemRepository, RewardItemRepository>();
 builder.Services.AddScoped<IRewardItemService, RewardItemService>();
+builder.Services.AddScoped<IPlayerInventoryRepository, PlayerInventoryRepository>();
+builder.Services.AddScoped<IPlayerInventoryService, PlayerInventoryService>();
 builder.Services.AddScoped<IStreakService, StreakService>();
 
 builder.Services.Configure<LevelUpLifeBackend.Infrastructure.Configuration.StreakProtectionOptions>(
