@@ -7,6 +7,7 @@ using LevelUpLifeBackend.Repositories;
 using LevelUpLifeBackend.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using System.Threading;
 using Microsoft.Extensions.Options;
 using Moq;
 using Xunit;
@@ -45,6 +46,11 @@ public class HabitServiceUpdateTaskTests
         var timerRepo = new Mock<ITimerCriteriaRepository>();
         var streakLogRepo = streakRepo ?? CreateDefaultStreakRepoMock();
 
+        var aiDifficulty = new Mock<IAiDifficultyService>();
+        aiDifficulty
+            .Setup(s => s.ClassifyAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AiDifficultyResult(TaskDifficulty.MEDIUM, false));
+
         return new HabitService(
             habitRepo.Object,
             taskRepo.Object,
@@ -52,6 +58,7 @@ public class HabitServiceUpdateTaskTests
             timerRepo.Object,
             streakLogRepo.Object,
             CreateLevelProgressService(),
+            aiDifficulty.Object,
             context
         );
     }
@@ -149,7 +156,7 @@ public class HabitServiceUpdateTaskTests
         var result = await service.UpdateTaskAsync(1, ValidUpdateRequest(), userId: 2);
 
         Assert.Equal("Updated title", result.Title);
-        Assert.Equal(TaskDifficulty.HARD, result.Difficulty);
+        Assert.Equal(TaskDifficulty.MEDIUM, result.Difficulty);
         Assert.NotNull(result.RepetitionCriteria);
         Assert.Equal(5, result.RepetitionCriteria!.Repetitions);
         taskRepo.Verify(r => r.UpdateWithRepetitionCriteriaAsync(It.IsAny<HabitTask>()), Times.Once);

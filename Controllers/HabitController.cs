@@ -71,6 +71,7 @@ public class HabitsController : ControllerBase
             {
                 success = true,
                 message = "El nuevo hábito se ha creado exitosamente.",
+                aiDifficultyFailed = createdHabit.AiDifficultyFailed,
             };
             return CreatedAtAction(nameof(GetById), new { id = createdHabit.Id }, customResponse);
         }
@@ -200,6 +201,7 @@ public class HabitsController : ControllerBase
                     success = true,
                     message = "Hábito actualizado exitosamente!",
                     data = updatedHabit,
+                    aiDifficultyFailed = updatedHabit.AiDifficultyFailed,
                 }
             );
         }
