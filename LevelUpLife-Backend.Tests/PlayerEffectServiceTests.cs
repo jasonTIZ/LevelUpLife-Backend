@@ -192,6 +192,7 @@ public class HabitServiceRewardEffectsTests
 
         Assert.Equal(100, response.XpEarned);
         Assert.Equal(100, task.EarnedXpSnapshot);
+        Assert.Equal(100, player.Gold);
     }
 
     private static AppDbContext CreateContext()
@@ -230,6 +231,7 @@ public class HabitServiceRewardEffectsTests
             UserName = $"complete-{Guid.NewGuid()}",
             Password = "hash",
             ExperiencePoints = 0,
+            Gold = 0,
             DaysStreak = 0,
             IsActive = true,
             CreationDate = DateTime.UtcNow,

@@ -328,6 +328,7 @@ public class HabitService : IHabitService
         task.EarnedXpSnapshot = xpEarned;
         var previousLevel = _levelProgressService.CalculateLevel(player.ExperiencePoints);
         player.ExperiencePoints += xpEarned;
+        player.Gold += xpEarned;
         player.Level = _levelProgressService.CalculateLevel(player.ExperiencePoints);
 
         var streakResult = await ApplyStreakUpdateAsync(player, completionDate);
