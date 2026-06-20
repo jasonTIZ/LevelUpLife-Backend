@@ -25,4 +25,5 @@ public interface IHabitService
         int userId
     );
     Task<HabitResponseDto?> UpdateHabitAsync(UpdateHabitRequestDto dto);
+    Task<HabitResponseDto?> DeactivateHabitAsync(int habitId, int userId);
 }

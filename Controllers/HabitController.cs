@@ -217,6 +217,51 @@ public class HabitsController : ControllerBase
         }
     }
 
+    // [Authorize] //
+    [HttpDelete("{id:int}")]
+    public async Task<IActionResult> Deactivate(int id)
+    {
+        try
+        {
+            var userIdString = Request.Headers["X-User-Id"].FirstOrDefault();
+
+            if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out int userId))
+            {
+                return Unauthorized(new { success = false, message = "Acceso no autorizado." });
+            }
+
+            var deactivatedHabit = await _habitService.DeactivateHabitAsync(id, userId);
+
+            if (deactivatedHabit is null)
+            {
+                return NotFound(
+                    new { success = false, message = "El hábito que desea eliminar no existe." }
+                );
+            }
+
+            return Ok(
+                new
+                {
+                    success = true,
+                    message = "Hábito eliminado exitosamente!",
+                    data = deactivatedHabit,
+                }
+            );
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al eliminar: {ex.Message}");
+            return StatusCode(
+                500,
+                new
+                {
+                    success = false,
+                    message = "Ocurrió un error inesperado al intentar eliminar el hábito.",
+                }
+            );
+        }
+    }
+
     private int? ResolveAuthenticatedUserId()
     {
         var userIdValue =
