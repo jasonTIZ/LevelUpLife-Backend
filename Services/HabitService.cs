@@ -230,10 +230,16 @@ public class HabitService : IHabitService
         }
 
         if (request.CompletionCriteria == TaskCompletionCriteria.TIMER
-            && request.TimerCriteria is not null
-            && task.TimerCriteria is not null)
+            && request.TimerCriteria is not null)
         {
-            TimerCriteriaMapper.UpdateEntity(task.TimerCriteria, request.TimerCriteria);
+            if (task.TimerCriteria is null)
+            {
+                task.TimerCriteria = TimerCriteriaMapper.ToEntity(task.Id, request.TimerCriteria);
+            }
+            else
+            {
+                TimerCriteriaMapper.UpdateEntity(task.TimerCriteria, request.TimerCriteria);
+            }
         }
 
         await _habitTaskRepository.UpdateWithRepetitionCriteriaAsync(task);
