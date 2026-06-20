@@ -20,7 +20,14 @@ public class AppDbContext : DbContext
     public DbSet<Habit> Habits { get; set; }
     public DbSet<HabitTask> HabitTasks { get; set; }
     public DbSet<RepetitionCriteria> RepetitionCriteriaRecords { get; set; }
+    public DbSet<TimerCriteria> TimerCriteriaRecords { get; set; }
     public DbSet<EvidenceStorage> EvidenceStorages { get; set; }
+
+    public DbSet<RewardItemType> RewardItemTypes { get; set; }
+    public DbSet<RewardItem> RewardItems { get; set; }
+    public DbSet<StreakLog> StreakLogs { get; set; }
+    public DbSet<PlayerEvent> PlayerEvents { get; set; }
+    public DbSet<PlayerInventory> PlayerInventories { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -95,6 +102,9 @@ public class AppDbContext : DbContext
             entity.Property(e => e.LastLogin).HasColumnName("FEC_PLAYER_USER_LAST_LOGIN");
             entity.Property(e => e.CreationDate).HasColumnName("FEC_PLAYER_USER_CREATION_DATE");
             entity.Property(e => e.IsActive).HasColumnName("STATUS_PLAYER_USER_IS_ACTIVE");
+            entity.Property(e => e.Bio).HasColumnName("DSC_PLAYER_USER_BIO").HasMaxLength(500);
+            entity.Property(e => e.AvatarUrl).HasColumnName("DSC_PLAYER_USER_AVATAR_URL").HasMaxLength(500);
+            entity.Property(e => e.Gold).HasColumnName("NUM_PLAYER_USER_GOLD");
         });
 
         // ==========================================================
@@ -160,17 +170,25 @@ public class AppDbContext : DbContext
                   .WithMany(h => h.Tasks)
                   .HasForeignKey(e => e.HabitId)
                   .OnDelete(DeleteBehavior.Cascade);
+            entity.Property(e => e.HabitDisciplineId).HasColumnName("ID_HABIT_DISCIPLINE");
+            entity.HasOne(e => e.HabitDiscipline)
+                .WithMany()
+                .HasForeignKey(e => e.HabitDisciplineId);
 
             entity.Property(e => e.Title).HasColumnName("DSC_HABIT_TASK_TITLE").HasMaxLength(100).IsRequired();
             entity.Property(e => e.Description).HasColumnName("DSC_HABIT_TASK_DESCRIPTION");
             entity.Property(e => e.WeekDays).HasColumnName("DSC_HABIT_TASK_WEEK_DAYS");
             entity.Property(e => e.Difficulty).HasColumnName("TYPE_HABIT_TASK_DIFFICULTY");
+            entity.Property(e => e.XpValue).HasColumnName("NUM_HABIT_TASK_XP_VALUE");
             entity.Property(e => e.Frequency).HasColumnName("TYPE_HABIT_TASK_FREQUENCY");
             entity.Property(e => e.PeriodLength).HasColumnName("NUM_HABIT_TASK_PERIOD_LENGTH");
             entity.Property(e => e.PeriodUnit).HasColumnName("TYPE_HABIT_TASK_PERIOD_UNIT");
             entity.Property(e => e.StartDate).HasColumnName("FEC_HABIT_TASK_START_DATE");
+            entity.Property(e => e.IsCompleted).HasColumnName("STATUS_HABIT_TASK_IS_COMPLETED");
+            entity.Property(e => e.EarnedXpSnapshot).HasColumnName("NUM_HABIT_TASK_EARNED_XP");
             entity.Property(e => e.CompletionCriteria).HasColumnName("TYPE_COMPLETION_CRITERIA");
             entity.Property(e => e.Evidence).HasColumnName("TYPE_HABIT_TASK_EVIDENCE");
+            entity.Property(e => e.IsActive).HasColumnName("STATUS_HABIT_TASK_IS_ACTIVE");
         });
 
         modelBuilder.Entity<RepetitionCriteria>(entity =>
@@ -193,6 +211,24 @@ public class AppDbContext : DbContext
                   .HasColumnName("STATUS_REPETITIONS_CRITERIA_IS_ACTIVE");
         });
 
+        modelBuilder.Entity<TimerCriteria>(entity =>
+        {
+            entity.ToTable("LULT_HABIT_TASK_TIMER_CRITERIA");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("ID_HABIT_TASK_TIMER_CRITERIA");
+
+            entity.Property(e => e.HabitTaskId).HasColumnName("ID_HABIT_TASK");
+            entity.HasOne(e => e.HabitTask)
+                  .WithOne(ht => ht.TimerCriteria)
+                  .HasForeignKey<TimerCriteria>(e => e.HabitTaskId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.Property(e => e.NumSecondsDefined).HasColumnName("NUM_SECONDS_DEFINED");
+            entity.Property(e => e.NumSecondsLong).HasColumnName("NUM_SECONDS_LONG");
+            entity.Property(e => e.TypePauseIsAllowed).HasColumnName("TYPE_PAUSE_IS_ALLOWED");
+            entity.Property(e => e.StatusTimerCriteriaIsActive).HasColumnName("STATUS_TIMER_CRITERIA_IS_ACTIVE");
+        });
+
         modelBuilder.Entity<EvidenceStorage>(entity =>
         {
             entity.ToTable("LULT_HABIT_TASK_EVIDENCE_STORAGE");
@@ -208,6 +244,104 @@ public class AppDbContext : DbContext
             entity.Property(e => e.EvidencePathUrl).HasColumnName("DSC_EVIDENCE_PATH_URL");
             entity.Property(e => e.HealthDataJson).HasColumnName("DSC_HEALTH_DATA_JSON");
             entity.Property(e => e.UploadedAt).HasColumnName("FEC_UPLOADED");
+        });
+
+        modelBuilder.Entity<RewardItemType>(entity =>
+        {
+            entity.ToTable("LULM_REWARD_ITEM_TYPE");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("ID_REWARD_ITEM_TYPE");
+            entity.Property(e => e.Name).HasColumnName("DSC_REWARD_ITEM_TYPE_NAME").HasMaxLength(100).IsRequired();
+            entity.Property(e => e.Description).HasColumnName("DSC_REWARD_ITEM_TYPE_DESC");
+            entity.Property(e => e.IsActive).HasColumnName("STATUS_REWARD_ITEM_TYPE_IS_ACTIVE");
+        });
+
+        modelBuilder.Entity<RewardItem>(entity =>
+        {
+            entity.ToTable("LULM_REWARD_ITEM");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("ID_REWARD_ITEM");
+
+            entity.Property(e => e.TypeId).HasColumnName("ID_REWARD_ITEM_TYPE");
+            entity.HasOne(e => e.Type)
+                  .WithMany()
+                  .HasForeignKey(e => e.TypeId);
+
+            entity.Property(e => e.Name).HasColumnName("DSC_REWARD_ITEM_NAME").HasMaxLength(100).IsRequired();
+            entity.Property(e => e.Description).HasColumnName("DSC_REWARD_ITEM_DESCRIPTION");
+            entity.Property(e => e.CostGold).HasColumnName("NUM_REWARD_ITEM_COST_GOLD");
+            entity.Property(e => e.EffectValue).HasColumnName("NUM_REWARD_ITEM_EFFECT_VALUE");
+            entity.Property(e => e.IsActive).HasColumnName("STATUS_REWARD_ITEM_IS_ACTIVE");
+        });
+
+        modelBuilder.Entity<StreakLog>(entity =>
+        {
+            entity.ToTable("LULH_STREAK_LOG");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("ID_STREAK_LOG");
+
+            entity.Property(e => e.PlayerUserId).HasColumnName("ID_PLAYER_USER");
+            entity.HasOne(e => e.PlayerUser)
+                  .WithMany()
+                  .HasForeignKey(e => e.PlayerUserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.Property(e => e.StreakCount).HasColumnName("NUM_STREAK_COUNT");
+            entity.Property(e => e.LogDate).HasColumnName("FEC_LOG_DATE");
+            entity.Property(e => e.ProtectionUsed).HasColumnName("TYPE_PROTECTION_USED");
+            entity.Property(e => e.ProtectionType)
+                .HasColumnName("DSC_STREAK_PROTECTION_TYPE")
+                .HasConversion<string>()
+                .HasMaxLength(20);
+            entity.Property(e => e.CompletionRecorded).HasColumnName("STATUS_STREAK_COMPLETION_RECORDED");
+        });
+
+        modelBuilder.Entity<PlayerEvent>(entity =>
+        {
+            entity.ToTable("LULH_PLAYER_EVENT");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("ID_PLAYER_EVENT");
+
+            entity.Property(e => e.PlayerUserId).HasColumnName("ID_PLAYER_USER");
+            entity.HasOne(e => e.PlayerUser)
+                .WithMany()
+                .HasForeignKey(e => e.PlayerUserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.Property(e => e.EventType)
+                .HasColumnName("TYPE_PLAYER_EVENT")
+                .HasConversion<string>()
+                .HasMaxLength(50);
+            entity.Property(e => e.PayloadJson).HasColumnName("DSC_PLAYER_EVENT_PAYLOAD");
+            entity.Property(e => e.CreatedAt).HasColumnName("FEC_PLAYER_EVENT_CREATED");
+
+            entity.HasIndex(e => new { e.PlayerUserId, e.CreatedAt });
+        });
+
+        modelBuilder.Entity<PlayerInventory>(entity =>
+        {
+            entity.ToTable("LULT_PLAYER_INVENTORY");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("ID_INVENTORY");
+
+            entity.Property(e => e.PlayerUserId).HasColumnName("ID_PLAYER_USER");
+            entity.HasOne(e => e.PlayerUser)
+                .WithMany()
+                .HasForeignKey(e => e.PlayerUserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.Property(e => e.RewardItemId).HasColumnName("ID_REWARD_ITEM");
+            entity.HasOne(e => e.RewardItem)
+                .WithMany()
+                .HasForeignKey(e => e.RewardItemId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.Property(e => e.Quantity).HasColumnName("NUM_INVENTORY_QUANTITY");
+            entity.Property(e => e.IsEquipped).HasColumnName("STATUS_INVENTORY_IS_EQUIPPED");
+            entity.Property(e => e.AcquiredAt).HasColumnName("FEC_ACQUIRED");
+
+            entity.HasIndex(e => e.PlayerUserId);
+            entity.HasIndex(e => e.RewardItemId);
         });
     }
 }

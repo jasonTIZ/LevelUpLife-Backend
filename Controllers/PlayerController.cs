@@ -19,7 +19,42 @@ public class PlayerController : ControllerBase
         _playerService = playerService;
     }
 
+    [HttpGet("profile")]
+    public async Task<IActionResult> GetProfile()
+    {
+        var userIdResult = ResolveAuthenticatedUserId();
+        if (userIdResult is null)
+        {
+            return Unauthorized(new
+            {
+                code = 401,
+                message = "Unauthorized",
+                details = "Token inválido o sin identificador de usuario."
+            });
+        }
+
+        var result = await _playerService.GetProfileAsync(userIdResult.Value);
+
+        return result.Status switch
+        {
+            GetPlayerProfileStatus.Success => BuildProfileSuccessResponse(result),
+            GetPlayerProfileStatus.NotFound => NotFound(new
+            {
+                code = 404,
+                message = "Not Found",
+                details = "No se encontró el jugador solicitado."
+            }),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new
+            {
+                code = 500,
+                message = "Internal Server Error",
+                details = "Unexpected error occurred"
+            })
+        };
+    }
+
     [HttpPut("update")]
+    [HttpPatch("update")]
     public async Task<IActionResult> UpdateProfile([FromBody] UpdatePlayerProfileRequestDto request)
     {
         var userIdResult = ResolveAuthenticatedUserId();
@@ -80,6 +115,95 @@ public class PlayerController : ControllerBase
                 details = "Unexpected error occurred"
             })
         };
+    }
+
+    [HttpPost("profile/avatar")]
+    [RequestSizeLimit(5 * 1024 * 1024)]
+    [RequestFormLimits(MultipartBodyLengthLimit = 5 * 1024 * 1024)]
+    public async Task<IActionResult> UploadAvatar(IFormFile? file)
+    {
+        var userIdResult = ResolveAuthenticatedUserId();
+        if (userIdResult is null)
+        {
+            return Unauthorized(new
+            {
+                code = 401,
+                message = "Unauthorized",
+                details = "Token inválido o sin identificador de usuario."
+            });
+        }
+
+        if (!Request.Headers.TryGetValue("If-Match", out var ifMatchHeader) || string.IsNullOrWhiteSpace(ifMatchHeader))
+        {
+            return BadRequest(new
+            {
+                code = 400,
+                message = "Bad Request",
+                details = "El header If-Match es requerido."
+            });
+        }
+
+        if (file is null || file.Length == 0)
+        {
+            return BadRequest(new
+            {
+                code = 400,
+                message = "Bad Request",
+                details = "Debe enviar un archivo de imagen en el campo 'file'."
+            });
+        }
+
+        await using var stream = file.OpenReadStream();
+        var result = await _playerService.UploadAvatarAsync(
+            userIdResult.Value,
+            ifMatchHeader.ToString(),
+            stream,
+            file.ContentType,
+            file.Length);
+
+        return result.Status switch
+        {
+            UploadPlayerAvatarStatus.Success => BuildSuccessResponse(new UpdatePlayerProfileServiceResult
+            {
+                Status = UpdatePlayerProfileStatus.Success,
+                Response = result.Response,
+                ETag = result.ETag
+            }),
+            UploadPlayerAvatarStatus.NotFound => NotFound(new
+            {
+                code = 404,
+                message = "Not Found",
+                details = "No se encontró el jugador solicitado."
+            }),
+            UploadPlayerAvatarStatus.ETagMismatch => StatusCode(StatusCodes.Status412PreconditionFailed, new
+            {
+                code = 412,
+                message = "Precondition Failed",
+                details = "El recurso fue modificado por otra operación. Obtenga el ETag actualizado."
+            }),
+            UploadPlayerAvatarStatus.InvalidData => BadRequest(new
+            {
+                code = 400,
+                message = "Bad Request",
+                details = result.Details ?? "Archivo de avatar inválido."
+            }),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new
+            {
+                code = 500,
+                message = "Internal Server Error",
+                details = "Unexpected error occurred"
+            })
+        };
+    }
+
+    private IActionResult BuildProfileSuccessResponse(GetPlayerProfileServiceResult result)
+    {
+        if (!string.IsNullOrWhiteSpace(result.ETag))
+        {
+            Response.Headers.ETag = result.ETag;
+        }
+
+        return Ok(result.Response);
     }
 
     private IActionResult BuildSuccessResponse(UpdatePlayerProfileServiceResult result)

@@ -20,6 +20,61 @@ public class HabitTaskRepository : IHabitTaskRepository
         return task;
     }
 
+    public Task<HabitTask?> GetTrackedByIdForUserAsync(int taskId, int userId)
+    {
+        return _context.HabitTasks
+            .Include(t => t.Habit!)
+                .ThenInclude(h => h.User)
+            .Include(t => t.Habit!)
+                .ThenInclude(h => h.Discipline)
+            .Include(t => t.RepetitionCriteria)
+            .Include(t => t.TimerCriteria)
+            .FirstOrDefaultAsync(t => t.Id == taskId && t.Habit!.User.Id == userId);
+    }
+
+    public async Task UpdateAsync(HabitTask task)
+    {
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task UpdateWithRepetitionCriteriaAsync(HabitTask task)
+    {
+        await using var transaction = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            if (task.RepetitionCriteria is not null && task.RepetitionCriteria.Id == 0)
+            {
+                await _context.RepetitionCriteriaRecords.AddAsync(task.RepetitionCriteria);
+            }
+
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
+    }
+
+    public Task<HabitTask?> GetByIdWithCriteriaAsync(int id)
+    {
+        return _context.HabitTasks
+            .AsNoTracking()
+            .Include(t => t.RepetitionCriteria)
+            .Include(t => t.TimerCriteria)
+            .Include(t => t.HabitDiscipline)
+                .ThenInclude(d => d!.Category)
+            .FirstOrDefaultAsync(t => t.Id == id);
+    }
+
+    public async Task<EvidenceStorage> AddEvidenceAsync(EvidenceStorage evidence)
+    {
+        await _context.EvidenceStorages.AddAsync(evidence);
+        await _context.SaveChangesAsync();
+        return evidence;
+    }
+
     public async Task<IEnumerable<EvidenceStorage>> GetEvidencesByTaskIdAsync(int taskId)
     {
         return await _context.EvidenceStorages
@@ -33,8 +88,49 @@ public class HabitTaskRepository : IHabitTaskRepository
             .FirstOrDefaultAsync(e => e.HabitTaskId == taskId && e.Id == id);
     }
 
+    public async Task DeleteEvidenceAsync(EvidenceStorage evidence)
+    {
+        _context.EvidenceStorages.Remove(evidence);
+        await _context.SaveChangesAsync();
+    }
+
     public async Task<bool> ExistsAsync(int taskId)
     {
         return await _context.HabitTasks.AnyAsync(ht => ht.Id == taskId);
+    }
+
+    public async Task CompleteTaskAsync(
+        HabitTask task,
+        StreakLog? streakLog,
+        IReadOnlyList<PlayerEvent>? playerEvents = null)
+    {
+        await using var transaction = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            if (streakLog is not null)
+            {
+                if (streakLog.Id == 0)
+                {
+                    await _context.StreakLogs.AddAsync(streakLog);
+                }
+                else
+                {
+                    _context.StreakLogs.Update(streakLog);
+                }
+            }
+
+            if (playerEvents is { Count: > 0 })
+            {
+                await _context.PlayerEvents.AddRangeAsync(playerEvents);
+            }
+
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
     }
 }

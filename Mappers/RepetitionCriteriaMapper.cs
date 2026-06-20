@@ -28,6 +28,16 @@ public static class RepetitionCriteriaMapper
             entity.StatusRepetitionsCriteriaIsActive = dto.IsActive.Value;
     }
 
+    public static void UpdateEntity(RepetitionCriteria entity, CreateRepetitionCriteriaRequestDto dto)
+    {
+        entity.NumRepetitionsObjective = dto.Repetitions ?? entity.NumRepetitionsObjective;
+        entity.TypeUnityMeasurementUnit = dto.MeasurementUnit ?? entity.TypeUnityMeasurementUnit;
+        if (dto.IsPartialAllowed.HasValue)
+            entity.StatusIsPartialAllowed = dto.IsPartialAllowed.Value;
+        if (dto.IsActive.HasValue)
+            entity.StatusRepetitionsCriteriaIsActive = dto.IsActive.Value;
+    }
+
     public static RepetitionCriteriaResponseDto ToResponse(RepetitionCriteria entity)
     {
         return new RepetitionCriteriaResponseDto

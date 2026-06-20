@@ -16,6 +16,9 @@ public class PlayerProfileDto
     public DateTime? LastLogin { get; set; }
     public int ClassId { get; set; }
     public string ClassName { get; set; } = string.Empty;
+    public string? Bio { get; set; }
+    public string? AvatarUrl { get; set; }
+    public DateTime CreationDate { get; set; }
     public PersonProfileDto Person { get; set; } = new();
 }
 
@@ -25,6 +28,6 @@ public class PersonProfileDto
     public string Name { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
-    public DateOnly Birthdate { get; set; }
+    public DateOnly? Birthdate { get; set; }
     public bool IsActive { get; set; }
 }

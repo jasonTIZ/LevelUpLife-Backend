@@ -12,6 +12,9 @@ public class PlayerUser{
   public DateTime? LastLogin { get; set; }
   public DateTime CreationDate { get; set; }
   public bool IsActive { get; set; }
+  public string? Bio { get; set; }
+  public string? AvatarUrl { get; set; }
+  public int Gold { get; set; }
 
   public PlayerUser(){
     this.Id = 0;
@@ -22,7 +25,7 @@ public class PlayerUser{
     this.Level = 0;
     this.ExperiencePoints = 0;
     this.DaysStreak = 0;
-    this.LastLogin = new DateTime();
+    this.LastLogin = null;
     this.CreationDate = new DateTime();
     this.IsActive = true;
   }

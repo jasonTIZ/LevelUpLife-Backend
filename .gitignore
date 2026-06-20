@@ -2,6 +2,8 @@
 bin/
 obj/
 appsettings.Development.json
+appsettings.Development.example.json
 appsettings.json
-obj/
-bin/
+cookies.txt
+uploads/
+wwwroot/evidences/

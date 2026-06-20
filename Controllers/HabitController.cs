@@ -1,6 +1,8 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using LevelUpLifeBackend.DTOs.Requests;
 using LevelUpLifeBackend.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,15 +19,33 @@ public class HabitsController : ControllerBase
         _habitService = habitService;
     }
 
+    [Authorize]
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(int id)
     {
-        var habit = await _habitService.GetByIdAsync(id);
+        var userId = ResolveAuthenticatedUserId();
+        if (userId is null)
+        {
+            return Unauthorized(new
+            {
+                code = "UNAUTHORIZED",
+                message = "Unauthorized access",
+                details = "A valid JWT is required.",
+            });
+        }
+
+        var habit = await _habitService.GetByIdAsync(id, userId.Value);
 
         if (habit is null)
         {
-            return NotFound();
+            return NotFound(new
+            {
+                code = "HABIT_NOT_FOUND",
+                message = "Habit not found.",
+                details = $"Habit with ID {id} was not found for the authenticated user.",
+            });
         }
+
         return Ok(habit);
     }
 
@@ -51,6 +71,7 @@ public class HabitsController : ControllerBase
             {
                 success = true,
                 message = "El nuevo hábito se ha creado exitosamente.",
+                aiDifficultyFailed = createdHabit.AiDifficultyFailed,
             };
             return CreatedAtAction(nameof(GetById), new { id = createdHabit.Id }, customResponse);
         }
@@ -158,7 +179,6 @@ public class HabitsController : ControllerBase
 
         try
         {
-            //var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var userIdString = Request.Headers["X-User-Id"].FirstOrDefault();
 
             if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out int userId))
@@ -181,6 +201,7 @@ public class HabitsController : ControllerBase
                     success = true,
                     message = "Hábito actualizado exitosamente!",
                     data = updatedHabit,
+                    aiDifficultyFailed = updatedHabit.AiDifficultyFailed,
                 }
             );
         }
@@ -196,5 +217,64 @@ public class HabitsController : ControllerBase
                 }
             );
         }
+    }
+
+    // [Authorize] //
+    [HttpDelete("{id:int}")]
+    public async Task<IActionResult> Deactivate(int id)
+    {
+        try
+        {
+            var userIdString = Request.Headers["X-User-Id"].FirstOrDefault();
+
+            if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out int userId))
+            {
+                return Unauthorized(new { success = false, message = "Acceso no autorizado." });
+            }
+
+            var deactivatedHabit = await _habitService.DeactivateHabitAsync(id, userId);
+
+            if (deactivatedHabit is null)
+            {
+                return NotFound(
+                    new { success = false, message = "El hábito que desea eliminar no existe." }
+                );
+            }
+
+            return Ok(
+                new
+                {
+                    success = true,
+                    message = "Hábito eliminado exitosamente!",
+                    data = deactivatedHabit,
+                }
+            );
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al eliminar: {ex.Message}");
+            return StatusCode(
+                500,
+                new
+                {
+                    success = false,
+                    message = "Ocurrió un error inesperado al intentar eliminar el hábito.",
+                }
+            );
+        }
+    }
+
+    private int? ResolveAuthenticatedUserId()
+    {
+        var userIdValue =
+            User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+
+        if (string.IsNullOrWhiteSpace(userIdValue) || !int.TryParse(userIdValue, out int playerUserId))
+        {
+            return null;
+        }
+
+        return playerUserId;
     }
 }

@@ -13,11 +13,27 @@ public class HabitDisciplineRepository : IHabitDisciplineRepository
         _context = context;
     }
 
+    public async Task<IEnumerable<HabitDiscipline>> GetAllAsync()
+    {
+        return await _context.Disciplines
+            .AsNoTracking()
+            .Include(d => d.Category)
+            .ToListAsync();
+    }
+
     public async Task<HabitDiscipline?> GetByIdAsync(int id)
     {
         return await _context.Disciplines
             .AsNoTracking()
             .Include(d => d.Category)
             .FirstOrDefaultAsync(d => d.Id == id);
+    }
+
+    public async Task<HabitDiscipline> AddAsync(HabitDiscipline discipline)
+    {
+        _context.Entry(discipline.Category).State = EntityState.Unchanged;
+        await _context.Disciplines.AddAsync(discipline);
+        await _context.SaveChangesAsync();
+        return discipline;
     }
 }

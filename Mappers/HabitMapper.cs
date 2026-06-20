@@ -24,23 +24,18 @@ public static class HabitMapper
             Id = habit.Id,
             Title = habit.Title,
             Description = habit.Description,
+            DisciplineId = habit.Discipline.Id,
             DisciplineName = habit.Discipline.Name,
             UserName = habit.User.UserName,
+            CategoryId = habit.Discipline.Category.Id,
             CategoryName = habit.Discipline.Category.Name,
             IsActive = habit.IsActive,
-            Tasks = habit.Tasks.Select(t => new HabitTaskResponseDto
-            {
-                Id = t.Id,
-                RepetitionCriteria = t.RepetitionCriteria is null
-                    ? null
-                    : RepetitionCriteriaMapper.ToResponse(t.RepetitionCriteria),
-            }).ToList(),
+            Tasks = habit.Tasks.Select(HabitTaskMapper.ToResponse).ToList(),
         };
     }
 
     public static void UpdateEntity(UpdateHabitRequestDto dto, Habit existingHabit)
     {
-        existingHabit.Discipline.Id = dto.DisciplineId;
         existingHabit.Title = dto.Title;
         existingHabit.Description = dto.Description;
     }

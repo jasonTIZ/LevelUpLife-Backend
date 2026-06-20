@@ -15,20 +15,29 @@ public class HabitCategoryService : IHabitCategoryService
 
     public async Task<
         PagedResultDto<HabitCategoryResponseDto>
-    > GetActiveHabitCategoriesPaginatedAsync(int pageNumber, int pageSize)
+    > GetActiveHabitCategoriesPaginatedAsync(
+        int pageNumber,
+        int pageSize,
+        string? search = null,
+        int? userId = null
+    )
     {
         var (habitCategories, totalCount) =
             await _habitCategoryRepository.GetActiveHabitCategoriesPaginatedAsync(
                 pageNumber,
-                pageSize
+                pageSize,
+                search,
+                userId
             );
 
         var dtoList = habitCategories.Select(h => new HabitCategoryResponseDto
         {
-            Id = h.Id,
-            Name = h.Name,
-            Description = h.Description,
-            IsActive = h.IsActive,
+            Id = h.Category.Id,
+            Name = h.Category.Name,
+            Description = h.Category.Description,
+            ImageUrl = null,
+            HabitsCount = h.HabitsCount,
+            IsActive = h.Category.IsActive,
         });
 
         int totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
@@ -37,6 +46,7 @@ public class HabitCategoryService : IHabitCategoryService
         {
             Items = dtoList,
             TotalRecords = totalCount,
+            TotalPages = totalPages,
             CurrentPage = pageNumber,
             PageSize = pageSize,
         };

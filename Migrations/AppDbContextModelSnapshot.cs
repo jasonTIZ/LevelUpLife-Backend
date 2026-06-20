@@ -27,8 +27,8 @@ namespace LevelUpLife_Backend.Migrations
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "ENUM_DIFFICULTY", "TaskDifficulty", new[] { "EASY", "MEDIUM", "HARD", "EPIC" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "ENUM_EVIDENCE", new[] { "HEALTH_CONNECT", "PHOTO", "VIDEO" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "ENUM_EVIDENCE", "TaskEvidence", new[] { "PHOTO", "VIDEO", "HEALTH_CONNECT" });
-            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "ENUM_FREQUENCY", new[] { "DAILY", "WEEKLY" });
-            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "ENUM_FREQUENCY", "TaskFrequency", new[] { "DAILY", "WEEKLY" });
+            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "ENUM_FREQUENCY", new[] { "DAILY", "MONTHLY", "WEEKLY" });
+            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "ENUM_FREQUENCY", "TaskFrequency", new[] { "DAILY", "WEEKLY", "MONTHLY" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "ENUM_MEASUREMENT_UNIT", new[] { "CALS", "KMS", "REPS", "SERIES" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "ENUM_MEASUREMENT_UNIT", "MeasurementUnit", new[] { "REPS", "SERIES", "KMS", "CALS" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "ENUM_PERIOD_UNIT", new[] { "DAYS", "MONTHS", "WEEKS" });
@@ -193,6 +193,10 @@ namespace LevelUpLife_Backend.Migrations
                         .HasColumnType("\"ENUM_DIFFICULTY\"")
                         .HasColumnName("TYPE_HABIT_TASK_DIFFICULTY");
 
+                    b.Property<int?>("EarnedXpSnapshot")
+                        .HasColumnType("integer")
+                        .HasColumnName("NUM_HABIT_TASK_EARNED_XP");
+
                     b.Property<TaskEvidence?>("Evidence")
                         .HasColumnType("\"ENUM_EVIDENCE\"")
                         .HasColumnName("TYPE_HABIT_TASK_EVIDENCE");
@@ -201,9 +205,21 @@ namespace LevelUpLife_Backend.Migrations
                         .HasColumnType("\"ENUM_FREQUENCY\"")
                         .HasColumnName("TYPE_HABIT_TASK_FREQUENCY");
 
+                    b.Property<int?>("HabitDisciplineId")
+                        .HasColumnType("integer")
+                        .HasColumnName("ID_HABIT_DISCIPLINE");
+
                     b.Property<int>("HabitId")
                         .HasColumnType("integer")
                         .HasColumnName("ID_HABIT");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("STATUS_HABIT_TASK_IS_ACTIVE");
+
+                    b.Property<bool>("IsCompleted")
+                        .HasColumnType("boolean")
+                        .HasColumnName("STATUS_HABIT_TASK_IS_COMPLETED");
 
                     b.Property<int>("PeriodLength")
                         .HasColumnType("integer")
@@ -227,7 +243,13 @@ namespace LevelUpLife_Backend.Migrations
                         .HasColumnType("text")
                         .HasColumnName("DSC_HABIT_TASK_WEEK_DAYS");
 
+                    b.Property<int>("XpValue")
+                        .HasColumnType("integer")
+                        .HasColumnName("NUM_HABIT_TASK_XP_VALUE");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("HabitDisciplineId");
 
                     b.HasIndex("HabitId");
 
@@ -243,7 +265,7 @@ namespace LevelUpLife_Backend.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<DateOnly>("BirthDate")
+                    b.Property<DateOnly?>("BirthDate")
                         .HasColumnType("date")
                         .HasColumnName("FEC_PERSON_BIRTHDATE");
 
@@ -270,7 +292,6 @@ namespace LevelUpLife_Backend.Migrations
                         .HasColumnName("DSC_PERSON_NAME");
 
                     b.Property<string>("PhoneNumber")
-                        .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)")
                         .HasColumnName("DSC_PERSON_PHONE_NUMBER");
@@ -283,6 +304,40 @@ namespace LevelUpLife_Backend.Migrations
                     b.ToTable("LULM_PERSON", (string)null);
                 });
 
+            modelBuilder.Entity("LevelUpLifeBackend.Models.PlayerEvent", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("ID_PLAYER_EVENT");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("FEC_PLAYER_EVENT_CREATED");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("TYPE_PLAYER_EVENT");
+
+                    b.Property<string>("PayloadJson")
+                        .HasColumnType("text")
+                        .HasColumnName("DSC_PLAYER_EVENT_PAYLOAD");
+
+                    b.Property<int>("PlayerUserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("ID_PLAYER_USER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PlayerUserId", "CreatedAt");
+
+                    b.ToTable("LULH_PLAYER_EVENT", (string)null);
+                });
+
             modelBuilder.Entity("LevelUpLifeBackend.Models.PlayerUser", b =>
                 {
                     b.Property<int>("Id")
@@ -291,6 +346,16 @@ namespace LevelUpLife_Backend.Migrations
                         .HasColumnName("ID_PLAYER_USER");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AvatarUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("DSC_PLAYER_USER_AVATAR_URL");
+
+                    b.Property<string>("Bio")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("DSC_PLAYER_USER_BIO");
 
                     b.Property<int>("ClassId")
                         .HasColumnType("integer")
@@ -386,6 +451,154 @@ namespace LevelUpLife_Backend.Migrations
                     b.ToTable("LULT_HABIT_TASK_REPETITIONS_CRITERIA", (string)null);
                 });
 
+            modelBuilder.Entity("LevelUpLifeBackend.Models.RewardItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("ID_REWARD_ITEM");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CostGold")
+                        .HasColumnType("integer")
+                        .HasColumnName("NUM_REWARD_ITEM_COST_GOLD");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text")
+                        .HasColumnName("DSC_REWARD_ITEM_DESCRIPTION");
+
+                    b.Property<decimal?>("EffectValue")
+                        .HasColumnType("numeric")
+                        .HasColumnName("NUM_REWARD_ITEM_EFFECT_VALUE");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("STATUS_REWARD_ITEM_IS_ACTIVE");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("DSC_REWARD_ITEM_NAME");
+
+                    b.Property<int>("TypeId")
+                        .HasColumnType("integer")
+                        .HasColumnName("ID_REWARD_ITEM_TYPE");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TypeId");
+
+                    b.ToTable("LULM_REWARD_ITEM", (string)null);
+                });
+
+            modelBuilder.Entity("LevelUpLifeBackend.Models.RewardItemType", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("ID_REWARD_ITEM_TYPE");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text")
+                        .HasColumnName("DSC_REWARD_ITEM_TYPE_DESC");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("STATUS_REWARD_ITEM_TYPE_IS_ACTIVE");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("DSC_REWARD_ITEM_TYPE_NAME");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("LULM_REWARD_ITEM_TYPE", (string)null);
+                });
+
+            modelBuilder.Entity("LevelUpLifeBackend.Models.StreakLog", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("ID_STREAK_LOG");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("CompletionRecorded")
+                        .HasColumnType("boolean")
+                        .HasColumnName("STATUS_STREAK_COMPLETION_RECORDED");
+
+                    b.Property<DateOnly>("LogDate")
+                        .HasColumnType("date")
+                        .HasColumnName("FEC_LOG_DATE");
+
+                    b.Property<int>("PlayerUserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("ID_PLAYER_USER");
+
+                    b.Property<string>("ProtectionType")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("DSC_STREAK_PROTECTION_TYPE");
+
+                    b.Property<bool>("ProtectionUsed")
+                        .HasColumnType("boolean")
+                        .HasColumnName("TYPE_PROTECTION_USED");
+
+                    b.Property<int>("StreakCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("NUM_STREAK_COUNT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PlayerUserId");
+
+                    b.ToTable("LULH_STREAK_LOG", (string)null);
+                });
+
+            modelBuilder.Entity("LevelUpLifeBackend.Models.TimerCriteria", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("ID_HABIT_TASK_TIMER_CRITERIA");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("HabitTaskId")
+                        .HasColumnType("integer")
+                        .HasColumnName("ID_HABIT_TASK");
+
+                    b.Property<int>("NumSecondsDefined")
+                        .HasColumnType("integer")
+                        .HasColumnName("NUM_SECONDS_DEFINED");
+
+                    b.Property<int?>("NumSecondsLong")
+                        .HasColumnType("integer")
+                        .HasColumnName("NUM_SECONDS_LONG");
+
+                    b.Property<bool>("StatusTimerCriteriaIsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("STATUS_TIMER_CRITERIA_IS_ACTIVE");
+
+                    b.Property<bool>("TypePauseIsAllowed")
+                        .HasColumnType("boolean")
+                        .HasColumnName("TYPE_PAUSE_IS_ALLOWED");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("HabitTaskId")
+                        .IsUnique();
+
+                    b.ToTable("LULT_HABIT_TASK_TIMER_CRITERIA", (string)null);
+                });
+
             modelBuilder.Entity("LevelUpLifeBackend.Models.UserPlayerClass", b =>
                 {
                     b.Property<int>("Id")
@@ -470,13 +683,30 @@ namespace LevelUpLife_Backend.Migrations
 
             modelBuilder.Entity("LevelUpLifeBackend.Models.HabitTask", b =>
                 {
-                    b.HasOne("LevelUpLifeBackend.Models.Habit", "Habit")
+                    b.HasOne("LevelUpLifeBackend.Models.HabitDiscipline", "HabitDiscipline")
                         .WithMany()
+                        .HasForeignKey("HabitDisciplineId");
+
+                    b.HasOne("LevelUpLifeBackend.Models.Habit", "Habit")
+                        .WithMany("Tasks")
                         .HasForeignKey("HabitId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Habit");
+
+                    b.Navigation("HabitDiscipline");
+                });
+
+            modelBuilder.Entity("LevelUpLifeBackend.Models.PlayerEvent", b =>
+                {
+                    b.HasOne("LevelUpLifeBackend.Models.PlayerUser", "PlayerUser")
+                        .WithMany()
+                        .HasForeignKey("PlayerUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("PlayerUser");
                 });
 
             modelBuilder.Entity("LevelUpLifeBackend.Models.PlayerUser", b =>
@@ -509,9 +739,49 @@ namespace LevelUpLife_Backend.Migrations
                     b.Navigation("HabitTask");
                 });
 
+            modelBuilder.Entity("LevelUpLifeBackend.Models.RewardItem", b =>
+                {
+                    b.HasOne("LevelUpLifeBackend.Models.RewardItemType", "Type")
+                        .WithMany()
+                        .HasForeignKey("TypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Type");
+                });
+
+            modelBuilder.Entity("LevelUpLifeBackend.Models.StreakLog", b =>
+                {
+                    b.HasOne("LevelUpLifeBackend.Models.PlayerUser", "PlayerUser")
+                        .WithMany()
+                        .HasForeignKey("PlayerUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("PlayerUser");
+                });
+
+            modelBuilder.Entity("LevelUpLifeBackend.Models.TimerCriteria", b =>
+                {
+                    b.HasOne("LevelUpLifeBackend.Models.HabitTask", "HabitTask")
+                        .WithOne("TimerCriteria")
+                        .HasForeignKey("LevelUpLifeBackend.Models.TimerCriteria", "HabitTaskId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("HabitTask");
+                });
+
+            modelBuilder.Entity("LevelUpLifeBackend.Models.Habit", b =>
+                {
+                    b.Navigation("Tasks");
+                });
+
             modelBuilder.Entity("LevelUpLifeBackend.Models.HabitTask", b =>
                 {
                     b.Navigation("RepetitionCriteria");
+
+                    b.Navigation("TimerCriteria");
                 });
 #pragma warning restore 612, 618
         }

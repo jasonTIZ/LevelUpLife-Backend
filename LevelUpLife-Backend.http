@@ -1,6 +1,41 @@
 @LevelUpLife_Backend_HostAddress = http://localhost:5223
 
-GET {{LevelUpLife_Backend_HostAddress}}/weatherforecast/
+### Health check
+GET {{LevelUpLife_Backend_HostAddress}}/
 Accept: application/json
+
+###
+
+### AI Chat — mensaje básico (model y systemPrompt opcionales)
+POST {{LevelUpLife_Backend_HostAddress}}/api/ai/chat
+Content-Type: application/json
+
+{
+  "username": "john_doe",
+  "message": "¿Cómo mejoro mi racha de hábitos?"
+}
+
+###
+
+### AI Chat — con modelo y prompt personalizados
+POST {{LevelUpLife_Backend_HostAddress}}/api/ai/chat
+Content-Type: application/json
+
+{
+  "username": "alice",
+  "message": "Dame un plan para esta semana",
+  "systemPrompt": "Eres un coach de hábitos para LevelUpLife. El usuario tiene nivel 5 y una racha de 12 días. Motívalo y da consejos específicos.",
+  "model": "gemma2:9b"
+}
+
+###
+
+### AI Chat — validación 400 (sin message)
+POST {{LevelUpLife_Backend_HostAddress}}/api/ai/chat
+Content-Type: application/json
+
+{
+  "username": "john_doe"
+}
 
 ###

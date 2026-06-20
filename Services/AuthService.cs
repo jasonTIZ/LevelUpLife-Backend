@@ -12,11 +12,16 @@ namespace LevelUpLifeBackend.Services;
 public class AuthService : IAuthService
 {
     private readonly IAuthRepository _authRepository;
+    private readonly ILevelProgressService _levelProgressService;
     private readonly IConfiguration _configuration;
 
-    public AuthService(IAuthRepository authRepository, IConfiguration configuration)
+    public AuthService(
+        IAuthRepository authRepository,
+        ILevelProgressService levelProgressService,
+        IConfiguration configuration)
     {
         _authRepository = authRepository;
+        _levelProgressService = levelProgressService;
         _configuration = configuration;
     }
 
@@ -61,12 +66,16 @@ public class AuthService : IAuthService
         if (!BCrypt.Net.BCrypt.Verify(request.Password, user.Password))
             return null;
         var token = GenerateJwtToken(user.Id, user.UserName);
+        var levelProgress = _levelProgressService.GetLevelProgress(user.ExperiencePoints);
+
         return new LoginResponseDto
         {
             Token = token,
             UserName = user.UserName,
-            Level = user.Level,
-            ClassName = user.Class?.Name ?? string.Empty
+            Level = levelProgress.CurrentLevel,
+            ClassName = user.Class?.Name ?? string.Empty,
+            LevelProgress = levelProgress,
+            LevelingConfig = _levelProgressService.GetLevelingConfig(),
         };
     }
 
