@@ -41,4 +41,11 @@ public class RewardItemRepository : IRewardItemRepository
 
         return await query.ToListAsync();
     }
+
+    public async Task<RewardItem?> GetActiveByIdAsync(int rewardItemId)
+    {
+        return await _context.RewardItems
+            .Include(ri => ri.Type)
+            .FirstOrDefaultAsync(ri => ri.Id == rewardItemId && ri.IsActive);
+    }
 }

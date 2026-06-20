@@ -29,6 +29,7 @@ public class RewardItemService : IRewardItemService
                 Description = ri.Description,
                 CostGold = ri.CostGold,
                 EffectValue = ri.EffectValue,
+                DurationDays = ri.DurationDays,
                 IsActive = ri.IsActive,
             });
         }

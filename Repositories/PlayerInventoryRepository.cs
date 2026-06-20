@@ -13,6 +13,14 @@ public class PlayerInventoryRepository : IPlayerInventoryRepository
         _context = context;
     }
 
+    public async Task<PlayerInventory?> GetByIdForPlayerAsync(int inventoryId, int playerUserId)
+    {
+        return await _context.PlayerInventories
+            .Include(i => i.RewardItem)
+                .ThenInclude(r => r!.Type)
+            .FirstOrDefaultAsync(i => i.Id == inventoryId && i.PlayerUserId == playerUserId);
+    }
+
     public async Task<PlayerInventory?> GetByPlayerAndItemAsync(int playerUserId, int rewardItemId)
     {
         return await _context.PlayerInventories
