@@ -46,6 +46,9 @@ public class GetPlayerProfileResponseDto
     [JsonPropertyName("avatarUrl")]
     public string? AvatarUrl { get; set; }
 
+    [JsonPropertyName("gold")]
+    public int Gold { get; set; }
+
     [JsonPropertyName("PersonData")]
     public GetPlayerProfilePersonDataDto PersonData { get; set; } = new();
 }

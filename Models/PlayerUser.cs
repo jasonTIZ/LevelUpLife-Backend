@@ -14,6 +14,7 @@ public class PlayerUser{
   public bool IsActive { get; set; }
   public string? Bio { get; set; }
   public string? AvatarUrl { get; set; }
+  public int Gold { get; set; }
 
   public PlayerUser(){
     this.Id = 0;

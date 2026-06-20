@@ -27,6 +27,7 @@ public class AppDbContext : DbContext
     public DbSet<RewardItem> RewardItems { get; set; }
     public DbSet<StreakLog> StreakLogs { get; set; }
     public DbSet<PlayerEvent> PlayerEvents { get; set; }
+    public DbSet<PlayerInventory> PlayerInventories { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -103,6 +104,7 @@ public class AppDbContext : DbContext
             entity.Property(e => e.IsActive).HasColumnName("STATUS_PLAYER_USER_IS_ACTIVE");
             entity.Property(e => e.Bio).HasColumnName("DSC_PLAYER_USER_BIO").HasMaxLength(500);
             entity.Property(e => e.AvatarUrl).HasColumnName("DSC_PLAYER_USER_AVATAR_URL").HasMaxLength(500);
+            entity.Property(e => e.Gold).HasColumnName("NUM_PLAYER_USER_GOLD");
         });
 
         // ==========================================================
@@ -314,6 +316,32 @@ public class AppDbContext : DbContext
             entity.Property(e => e.CreatedAt).HasColumnName("FEC_PLAYER_EVENT_CREATED");
 
             entity.HasIndex(e => new { e.PlayerUserId, e.CreatedAt });
+        });
+
+        modelBuilder.Entity<PlayerInventory>(entity =>
+        {
+            entity.ToTable("LULT_PLAYER_INVENTORY");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("ID_INVENTORY");
+
+            entity.Property(e => e.PlayerUserId).HasColumnName("ID_PLAYER_USER");
+            entity.HasOne(e => e.PlayerUser)
+                .WithMany()
+                .HasForeignKey(e => e.PlayerUserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.Property(e => e.RewardItemId).HasColumnName("ID_REWARD_ITEM");
+            entity.HasOne(e => e.RewardItem)
+                .WithMany()
+                .HasForeignKey(e => e.RewardItemId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.Property(e => e.Quantity).HasColumnName("NUM_INVENTORY_QUANTITY");
+            entity.Property(e => e.IsEquipped).HasColumnName("STATUS_INVENTORY_IS_EQUIPPED");
+            entity.Property(e => e.AcquiredAt).HasColumnName("FEC_ACQUIRED");
+
+            entity.HasIndex(e => e.PlayerUserId);
+            entity.HasIndex(e => e.RewardItemId);
         });
     }
 }

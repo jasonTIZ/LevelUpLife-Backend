@@ -289,6 +289,7 @@ public class PlayerService : IPlayerService
             PlayerUserCreationDate = player.CreationDate,
             Bio = player.Bio,
             AvatarUrl = player.AvatarUrl,
+            Gold = player.Gold,
             TotalExperiencePoints = levelProgress.TotalExperiencePoints,
             ExperiencePointsInCurrentLevel = levelProgress.ExperiencePointsInCurrentLevel,
             ExperiencePointsRequiredForNextLevel = levelProgress.ExperiencePointsRequiredForNextLevel,
