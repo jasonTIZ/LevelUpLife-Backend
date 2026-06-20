@@ -29,7 +29,6 @@ public class CreateStandaloneHabitTaskRequestDto : IValidatableObject
     public bool? IsActive { get; set; }
     public string? WeekDays { get; set; }
 
-    [Required(ErrorMessage = "Difficulty is required.")]
     public TaskDifficulty? Difficulty { get; set; }
 
     [Required(ErrorMessage = "Frequency is required.")]

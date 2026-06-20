@@ -22,4 +22,5 @@ public class HabitTaskResponseDto
     public TaskEvidence? Evidence { get; set; }
     public RepetitionCriteriaResponseDto? RepetitionCriteria { get; set; }
     public TimerCriteriaResponseDto? TimerCriteria { get; set; }
+    public bool AiDifficultyFailed { get; set; }
 }

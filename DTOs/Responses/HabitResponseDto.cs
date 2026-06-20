@@ -12,4 +12,5 @@ public class HabitResponseDto
     public string CategoryName { get; set; } = string.Empty;
     public bool IsActive { get; set; }
     public List<HabitTaskResponseDto> Tasks { get; set; } = [];
+    public bool AiDifficultyFailed { get; set; }
 }

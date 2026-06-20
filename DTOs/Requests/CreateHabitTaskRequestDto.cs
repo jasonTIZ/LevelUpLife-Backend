@@ -17,7 +17,6 @@ public class CreateHabitTaskRequestDto
 
     public string? WeekDays { get; set; }
 
-    [Required(ErrorMessage = "La dificultad es obligatoria.")]
     public TaskDifficulty? Difficulty { get; set; }
 
     [Required(ErrorMessage = "La frecuencia es obligatoria.")]
